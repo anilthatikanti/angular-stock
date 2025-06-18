@@ -14,5 +14,5 @@ export const environment = {
   }
 
   export const WEB_APP_URL = 'https://angular-stock.netlify.app';
-export const SERVER_URL = 'https://node-mongoose-server.onrender.com';
-export const WEB_SOCKET = 'wss://node-mongoose-server.onrender.com';
+export const SERVER_URL = 'https://anilthatikanti.space';
+export const WEB_SOCKET = 'wss://anilthatikanti.space';
