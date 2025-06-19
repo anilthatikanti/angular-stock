@@ -164,6 +164,9 @@
           src="assets/images/illustrations/no_data.svg"
           alt="NO DATA"
           width="100%"
+          height="100%"
+          loading="lazy"
+          fetchpriority="high"
         />
         <h3>No Results Found</h3>
         <p class="text-gray-500">Try a different search term.</p>
@@ -179,6 +182,9 @@
         src="assets/images/illustrations/no_data.svg"
         alt="NO DATA"
         width="100%"
+        height="100%"
+        loading="lazy"
+          fetchpriority="high"
       />
       <h3>No Folders Found</h3>
       <p class="text-gray-500">
@@ -295,6 +301,8 @@
     [src]="image?.fileUrl"
     alt="Folder Image"
     style="height: 50vh; width: 50vw; object-fit: contain"
+    loading="eager"
+    fetchpriority="high"
   />
   }
   <div class="flex justify-content-end mt-2 sticky bottom-0 right-0">

@@ -39,6 +39,7 @@ import { SERVER_URL } from '../../environments/environment';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TvChartComponent } from './tv-chart/tv-chart.component';
 import {  Nifty50WatchListComponent } from './nift50-watch-list/nifty50-watch-list.component';
+import { Meta, Title } from '@angular/platform-browser';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -101,8 +102,19 @@ export class DashboardComponent implements OnInit {
   constructor(
     private stockService: StockService,
     private messageService: MessageService,
+    private meta: Meta, private title: Title
   ) {
+    this.loadMeta()
   }
+
+  loadMeta() {
+    this.title.setTitle('Dashboard | Angular Stock');
+    this.meta.updateTag({
+      name: 'description',
+      content: 'Dashboard to your Angular Stock account to manage portfolio and watchlist.'
+    });
+  }
+
 
   async ngOnInit() {
     try {

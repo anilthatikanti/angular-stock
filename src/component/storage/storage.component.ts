@@ -37,6 +37,7 @@ import { IFile } from '../../shared/interface/folder-file/file.interface';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastService } from '../../shared/services/toastService/toast.service';
 import { SERVER_URL } from '../../environments/environment';
+import { Meta, Title } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-storage',
@@ -94,7 +95,9 @@ export class StorageComponent implements OnInit {
     private activatedRoute: ActivatedRoute,
     private http: HttpClient,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private title: Title,
+    private meta: Meta
   ) {
     const formBuilder: FormBuilder = new FormBuilder();
     this.editForm = formBuilder.group({
@@ -105,8 +108,17 @@ export class StorageComponent implements OnInit {
   get Form() {
     return this.editForm.controls['name'];
   }
+
+    loadMeta() {
+    this.title.setTitle('Storage | Angular Stock');
+    this.meta.updateTag({
+      name: 'description',
+      content: 'Storage is work for your Angular Stock account to manage files and folders',
+    });
+  }
   ngOnInit() {
   this.onResize();
+  this.loadMeta();
 
   combineLatest([
     this.activatedRoute.params,

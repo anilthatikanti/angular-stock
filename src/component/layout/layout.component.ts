@@ -36,7 +36,8 @@ import {
 } from '@angular/forms';
 import { passwordPattern } from '../../shared/validation/form.validation';
 import { ToastService } from '../../shared/services/toastService/toast.service';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { Meta, Title } from '@angular/platform-browser';
 @Component({
   selector: 'app-layout',
   standalone: true,
@@ -53,6 +54,7 @@ import { CommonModule } from '@angular/common';
     PasswordModule,
     ReactiveFormsModule,
     CommonModule,
+    NgOptimizedImage
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './layout.component.html',
@@ -95,8 +97,9 @@ export class LayoutComponent implements OnInit {
     private messageService: MessageService,
     private firebaseAuth: Auth,
     private toast: ToastService,
-    private router: Router
+    private router: Router,private meta: Meta, private title: Title
   ) {
+    
     let formBuilder: FormBuilder = new FormBuilder();
     this.changePasswordForm = formBuilder.group({
       currentPassword: new FormControl('', [
@@ -114,7 +117,16 @@ export class LayoutComponent implements OnInit {
     });
   }
 
+  loadMeta() {
+    this.title.setTitle('Layout | Angular Stock');
+    this.meta.updateTag({
+      name: 'description',
+      content: 'Layout to your Angular Stock account to manage structure'
+    });
+  }
+
   async ngOnInit() {
+    this.loadMeta()
     let res = await fetchSignInMethodsForEmail(
       this.firebaseAuth,
       this.firebaseAuth.currentUser?.email ?? ''

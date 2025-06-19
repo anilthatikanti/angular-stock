@@ -26,6 +26,7 @@ import {
 } from 'rxjs';
 import { ToastService } from '../../shared/services/toastService/toast.service';
 import { SERVER_URL } from '../../environments/environment';
+import { Meta, Title } from '@angular/platform-browser';
 @Component({
   selector: 'app-bin',
   standalone: true,
@@ -71,13 +72,24 @@ export class BinComponent implements OnInit {
     private http: HttpClient,
     private activatedRoute: ActivatedRoute,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private title: Title,
+    private meta: Meta
+
   ) {
     this.tableLoading = false;
+  }
+    loadMeta() {
+    this.title.setTitle('Bin | Angular Stock');
+    this.meta.updateTag({
+      name: 'description',
+      content: 'Bin manage delete files and folders in you Angular Stock account'
+    });
   }
 
   async ngOnInit() {
   this.onResize();
+  this.loadMeta();
 
   combineLatest([
     this.activatedRoute.params,

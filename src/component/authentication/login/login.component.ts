@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormControl,
@@ -23,6 +23,8 @@ import {
 
 import { ToastService } from '../../../shared/services/toastService/toast.service';
 import { firebaseErrorMessages } from '../functions/authentication.function';
+import { NgOptimizedImage } from '@angular/common';
+import { Meta, Title } from '@angular/platform-browser';
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -33,11 +35,12 @@ import { firebaseErrorMessages } from '../functions/authentication.function';
     InputTextModule,
     RouterModule,
     PasswordModule,
+    NgOptimizedImage
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
 
   passwordRemember: boolean = true;
@@ -45,7 +48,9 @@ export class LoginComponent {
   constructor(
     private firebaseAuth: Auth,
     private toast: ToastService,
-    private router: Router
+    private router: Router,
+    private title: Title,
+    private meta: Meta
   ) {
     let formBuilder: FormBuilder = new FormBuilder();
     this.loginForm = formBuilder.group({
@@ -59,6 +64,18 @@ export class LoginComponent {
   }
   get password() {
     return this.loginForm.get('password');
+  }
+
+  ngOnInit() {
+    this.loadMeta();
+  }
+
+    loadMeta() {
+    this.title.setTitle('Login | Angular Stock');
+    this.meta.updateTag({
+      name: 'description',
+      content: 'This page allow you to login into the application',
+    });
   }
 
   async loginSubmit() {

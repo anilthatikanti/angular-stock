@@ -14,5 +14,5 @@ export const environment = {
   }
 
   export const WEB_APP_URL = 'https://angular-stock.netlify.app';
-export const SERVER_URL = 'https://anilthatikanti.space';
-export const WEB_SOCKET = 'wss://anilthatikanti.space';
+export const SERVER_URL = 'https://api.dev.anilthatikanti.space';
+export const WEB_SOCKET = 'wss://api.dev.anilthatikanti.space';
