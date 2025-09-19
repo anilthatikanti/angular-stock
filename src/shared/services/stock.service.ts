@@ -157,31 +157,61 @@ export class StockService {
   }
   async deleteWatchListItem(watchListId: string, stockSymbol: string) {
     let res = await firstValueFrom(
-      this.http.patch<ApiResponse>(`${SERVER_URL}/stocks/del-watchlist`, {
-        watchListId,
-        stockSymbol,
-      })
+      this.http.patch<ApiWatchListResponse>(
+        `${SERVER_URL}/stocks/del-stock-watchlist`,
+        {
+          watchListId,
+          stockSymbol,
+        }
+      )
     );
     return res;
   }
 
   async updateWatchListName(watchListId: string, name: string) {
     let res = await firstValueFrom(
-      this.http.patch<any>(`${SERVER_URL}/stocks/update-watchlistName`, {
-        watchListId,
-        name,
-      })
+      this.http.patch<ApiWatchListResponse>(
+        `${SERVER_URL}/stocks/update-watchlistName`,
+        {
+          watchListId,
+          name,
+        }
+      )
     );
     return res;
   }
 
   async addStockIntoWatchList(watchListId: string, stockItem: IStockData) {
     let res = await firstValueFrom(
-      this.http.patch<ApiResponse>(`${SERVER_URL}/stocks/add-watchlist`, {
-        watchListId,
-        stockSymbol: stockItem.symbol,
-        longName: stockItem.name,
+      this.http.patch<ApiWatchListResponse>(
+        `${SERVER_URL}/stocks/add-stock-watchlist`,
+        {
+          watchListId,
+          stockSymbol: stockItem.symbol,
+          longName: stockItem.name,
+        }
+      )
+    );
+    return res;
+  }
+
+  async createWatchList(name: string) {
+    let res = await firstValueFrom(
+      this.http.post<any>(`${SERVER_URL}/stocks/create-watchList`, {
+        name,
       })
+    );
+    return res;
+  }
+
+  async deleteWatchList(watchListId: string) {
+    let res = await firstValueFrom(
+      this.http.delete<ApiWatchListResponse>(
+        `${SERVER_URL}/stocks/delete-watchList`,
+        {
+          body: { watchListId },
+        }
+      )
     );
     return res;
   }

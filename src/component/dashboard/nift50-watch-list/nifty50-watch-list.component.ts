@@ -179,17 +179,25 @@ export class Nifty50WatchListComponent implements OnInit {
     });
   }
 
-  createWatchList() {
+  async createWatchList() {
     if (this.watchListData.length < 6) {
       let index = this.watchListData.findIndex(
         (watchList) => watchList.watchListName === this.createWatchListName
       );
       if (index === -1) {
-        this.watchListData.push({
-          _id: `${Date.now()}`,
-          watchListName: this.createWatchListName,
-          stocks: [],
-        });
+        let res = await this.stockService.createWatchList(
+          this.createWatchListName
+        );
+        if (!res.status) {
+          this.messageService.add({
+            severity: 'error',
+            summary: `Watchlist create error`,
+            detail: `${res.message}`,
+          });
+          this.createWatchListDialogVisible = false;
+          return;
+        }
+        this.watchListData.push(res.payload);
         this.createWatchListDialogVisible = false;
         this.createWatchListName = '';
       } else {
@@ -212,10 +220,25 @@ export class Nifty50WatchListComponent implements OnInit {
     this.createWatchListName = '';
     this.createWatchListDialogVisible = false;
   }
-  deleteWatchList() {
+  async deleteWatchList() {
+    if (!this.editWatchList) return;
+    let res = await this.stockService.deleteWatchList(this.editWatchList._id);
+    if (!res.status) {
+      this.messageService.add({
+        severity: 'error',
+        summary: `Watchlist delete error`,
+        detail: `Unable to delete ${this.editWatchList.watchListName}. Please try again later.`,
+      });
+      return;
+    }
     this.watchListData = this.watchListData.filter(
       (watchList) => watchList._id !== this.editWatchList?._id
     );
     this.editWatchList = undefined;
+    this.messageService.add({
+      severity: 'success',
+      summary: `Watchlist deleted`,
+      detail: `Watchlist deleted successfully.`,
+    });
   }
 }
