@@ -1,9 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { ApiResponse } from '../interface/response.interface';
-import { IClosed, IStockData, ITickerData } from '../interface/stock.interface';
+import {
+  ApiResponse,
+  ApiWatchListResponse,
+} from '../interface/response.interface';
+import {
+  IClosed,
+  IStockData,
+  ITickerData,
+  IWatchList,
+} from '../interface/stock.interface';
 import { firstValueFrom, ReplaySubject, Subject } from 'rxjs';
-import { WatchList } from '../interface/watchList.interface';
+// import { IWatchList } from '../interface/watchList.interface';
 import { Auth } from '@angular/fire/auth';
 import { WEB_SOCKET, SERVER_URL } from '../../environments/environment';
 
@@ -18,6 +26,7 @@ export class StockService {
   dataMap: Map<number, ITickerData> = new Map<number, ITickerData>();
   ws!: WebSocket;
   isTockensLoaded: boolean = false;
+  watchListData: IWatchList[] = [];
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
   private reconnectDelay: number = 1000;
@@ -50,8 +59,8 @@ export class StockService {
       if (!this.ws) {
         this.ws = new WebSocket(WEB_SOCKET, jwtToken);
       }
-        this.ws.onopen = () => {
-          console.log('WebSocket connected');
+      this.ws.onopen = () => {
+        console.log('WebSocket connected');
         this.reconnectAttempts = 0;
         this.ws.send(
           JSON.stringify({
@@ -122,6 +131,17 @@ export class StockService {
     }
   }
 
+  async getWatchListData() {
+    if (this.watchListData.length) return this.watchListData;
+    let data = await firstValueFrom(
+      this.http.get<ApiWatchListResponse>(`${SERVER_URL}/stocks/get-watchlist`)
+    );
+    if (data.status) {
+      this.watchListData = data.payload;
+    }
+    return this.watchListData;
+  }
+
   async connect(nifty50InstrumentalTokens: string[]) {
     if (this.liveData$?.closed || !this.liveData$) {
       this.liveData$ = new ReplaySubject<ITickerData | IClosed>(1);
@@ -135,27 +155,34 @@ export class StockService {
       this.ws.close(); // ✅ Properly close WebSocket   // ✅ Prevent reconnection issues
     }
   }
-}
+  async deleteWatchListItem(watchListId: string, stockSymbol: string) {
+    let res = await firstValueFrom(
+      this.http.patch<ApiResponse>(`${SERVER_URL}/stocks/del-watchlist`, {
+        watchListId,
+        stockSymbol,
+      })
+    );
+    return res;
+  }
 
-export const watchListData: WatchList[] = [
-  {
-    _id: 1,
-    watchListName: 'watch_list_1',
-    stocks: [],
-  },
-  {
-    _id: 2,
-    watchListName: 'watch_list_2',
-    stocks: [],
-  },
-  {
-    _id: 3,
-    watchListName: 'watch_list_3',
-    stocks: [],
-  },
-  {
-    _id: 4,
-    watchListName: 'watch_list_4',
-    stocks: [],
-  },
-];
+  async updateWatchListName(watchListId: string, name: string) {
+    let res = await firstValueFrom(
+      this.http.patch<any>(`${SERVER_URL}/stocks/update-watchlistName`, {
+        watchListId,
+        name,
+      })
+    );
+    return res;
+  }
+
+  async addStockIntoWatchList(watchListId: string, stockItem: IStockData) {
+    let res = await firstValueFrom(
+      this.http.patch<ApiResponse>(`${SERVER_URL}/stocks/add-watchlist`, {
+        watchListId,
+        stockSymbol: stockItem.symbol,
+        longName: stockItem.name,
+      })
+    );
+    return res;
+  }
+}

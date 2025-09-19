@@ -1,312 +1,304 @@
 <div class="w-full h-full flex flex-column gap-2">
-     <p-card
-          [style]="{
-            height: 'calc(50vh - 3.8rem)',
-            overflow: 'hidden',
-            border: ' solid 1px #e6e9ed',
-            'box-shadow': 'unset'
-          }"
-          class="w-full"
-        >
-          <ng-template pTemplate="header">
-            <div class="h-full">
-              <div
-                class="px-3 pt-3 flex justify-content-between align-items-center"
-              >
-                <h5 class="text-sm font-medium">Nifty 50 stocks</h5>
-                <input
-                  type="text"
-                  pInputText
-                  placeholder="Search stock"
-                  (keyup)="searchStock($event)"
-                />
-              </div>
-            </div>
-          </ng-template>
-          <ng-template pTemplate="content">
-            <div
-              class="p-3 mt-3 text-xs"
-              [style]="{ height: 'calc(50vh - 8rem)', 'overflow-y': 'auto' }"
+  <p-card
+    [style]="{
+      height: 'calc(50vh - 3.8rem)',
+      overflow: 'hidden',
+      border: ' solid 1px #e6e9ed',
+      'box-shadow': 'unset'
+    }"
+    class="w-full"
+  >
+    <ng-template pTemplate="header">
+      <div class="h-full">
+        <div class="px-3 pt-3 flex justify-content-between align-items-center">
+          <h5 class="text-sm font-medium">Nifty 50 stocks</h5>
+          <input
+            type="text"
+            pInputText
+            placeholder="Search stock"
+            (keyup)="searchStock($event)"
+          />
+        </div>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="content">
+      <div
+        class="p-3 mt-3 text-xs"
+        [style]="{ height: 'calc(50vh - 8rem)', 'overflow-y': 'auto' }"
+      >
+        @for (item of nifty50; track $index) { @if($index){
+        <p-divider />
+        }
+        <div class="flex justify-content-between align-items-center">
+          <div class="flex align-items-center gap-2">
+            <p-button
+              icon="pi pi-plus"
+              aria-label="add to watchlist"
+              size="small"
+              [style]="{
+                padding: '0px',
+                width: '16px',
+                'border-radius': '0px'
+              }"
+              (onClick)="op.toggle($event)"
+              [outlined]="true"
+            />
+            <p-overlayPanel
+              #op
+              [style]="{ padding: '0px' }"
+              [showCloseIcon]="false"
             >
-              @for (item of nifty50; track $index) { @if($index){
-              <p-divider />
-              }
-              <div class="flex justify-content-between align-items-center">
-                <div class="flex align-items-center gap-2">
-                  <p-button
-                    icon="pi pi-plus"
-                    aria-label="add to watchlist"
-                    size="small"
-                    [style]="{
-                      padding: '0px',
-                      width: '16px',
-                      'border-radius': '0px'
-                    }"
-                    (onClick)="op.toggle($event)"
-                    [outlined]="true"
-                  />
-                  <p-overlayPanel
-                    #op
-                    [style]="{ padding: '0px' }"
-                    [showCloseIcon]="false"
-                  >
-                    <ng-template pTemplate="content" ()>
-                      <div class="flex flex-column">
-                        <p class="text-sm font-semibold">Select watchList</p>
-                        <p-divider />
-                        @for (watchList of watchListData; track watchList._id) {
-                        <div
-                          class="flex justify-content-between align-items-center"
-                        >
-                          <p class="text-sm my-1">
-                            {{ watchList.watchListName }}
-                          </p>
-                          @if(!watchList.stocks.includes(item)){
-  
-                          <i
-                            class="pi pi-plus-circle cursor-pointer text-primary"
-                            (click)="
-                              updateWatchList(op, $event, item, watchList._id)
-                            "
-                          ></i>
-                          }@else {
-                          <i
-                            class="pi pi-check-circle text-green-500 cursor-pointer"
-                            (click)="this.activeTabViewIndex = $index"
-                          ></i>
-                          }
-                        </div>
-                        }
-                      </div>
-                    </ng-template>
-                  </p-overlayPanel>
-  
-                  <p
-                    class="font-normal cursor-pointer text-xs"
-                    (click)="selectingStock(item)"
-                  >
-                    {{ item.name }}
-                  </p>
-                </div>
-                <div class="flex flex-column text-right">
-                  <p>
-                    {{
-                      (liveDataMap[item.symbol]
-                        ? liveDataMap[item.symbol].price
-                        : item.current_price
-                      ).toFixed(2)
-                    }}
-                  </p>
-                  <div
-                    class="flex text-xs"
-                    [ngStyle]="
-                      (liveDataMap[item.symbol]
-                        ? liveDataMap[item.symbol].changePercent
-                        : 0) < 0
-                        ? { color: 'red' }
-                        : { color: 'green' }
-                    "
-                  >
-                    <span class="mr-2">{{
-                      (liveDataMap[item.symbol]
-                        ? liveDataMap[item.symbol].change
-                        : 0
-                      ).toFixed(2)
-                    }}</span>
-  
-                    (<span
-                      >{{
-                        (liveDataMap[item.symbol]
-                          ? liveDataMap[item.symbol].changePercent
-                          : 0
-                        ).toFixed(2)
-                      }}%</span
-                    >)
-                  </div>
-                </div>
-              </div>
-  
-              } @empty {
-              <li>There are no items.</li>
-              }
-            </div>
-          </ng-template>
-        </p-card>
-  
-        <p-card
-          [style]="{
-            height: 'calc(50vh - 3.8rem)',
-            overflow: 'hidden',
-            border: ' solid 1px #e6e9ed',
-            'box-shadow': 'unset'
-          }"
-          class="w-full"
-        >
-          <ng-template pTemplate="header">
-            <div class="h-full">
-              <div
-                class="px-3 py-2 flex justify-content-between align-items-center"
-              >
-                <div class="flex gap-2">
-                  <span class="text-base font-medium">My watchlist</span>
-                  <p-button
-                    icon="pi pi-plus"
-                    size="small"
-                    aria-label="Save"
-                    [style]="{
-                      padding: '0px',
-                      width: '16px',
-                      'border-radius': '0px'
-                    }"
-                    (onClick)="createWatchListDialogVisible = true"
-                    [outlined]="true"
-                  />
-                </div>
-                <h5 class="text-base font-medium">
-                  {{ getWatchListStocksCount() }} Items
-                </h5>
-              </div>
-            </div>
-          </ng-template>
-          <ng-template pTemplate="subHeader">
-            <p-tabView
-              [style]="{ padding: '0px', 'font-size': '12px', height: 1200 - 636 + 'px', 'overflow-y': 'auto','min-height': '230px',  }"
-              (activeIndexChange)="this.activeTabViewIndex = $event"
-              [activeIndex]="activeTabViewIndex"
-            >
-              @for( watchList of watchListData;track $index){
-              <p-tabPanel>
-                <ng-template pTemplate="header">
-                  <div (dblclick)="editWatchList = watchList">
-                    {{ watchList.watchListName }}
-                  </div>
-                </ng-template>
-                @for(stock of watchList.stocks;track $index){ @if($index){
-                <p-divider />
-                }
-                <div class="flex justify-content-between">
-                  <div class="flex align-items-center gap-2">
+              <ng-template pTemplate="content" ()>
+                <div class="flex flex-column">
+                  <p class="text-sm font-semibold">Select watchList</p>
+                  <p-divider />
+                  @for (watchList of watchListData; track watchList._id) {
+                  <div class="flex justify-content-between align-items-center">
+                    <p class="text-sm my-1">
+                      {{ watchList.watchListName }}
+                    </p>
+                    <!-- @if(!watchList.stocks.includes(item)){ -->
+
                     <i
-                      class="pi pi-trash cursor-pointer"
-                      [style]="{ 'font-size': '14px', color: 'tomato' }"
-                      (click)="deleteWatchListItem(watchList, stock)"
+                      class="pi pi-plus-circle cursor-pointer text-primary"
+                      (click)="updateWatchList(op, $event, item, watchList._id)"
                     ></i>
-                    <div>
-                      {{ stock.name }}
-                    </div>
+                    <!-- }@else {
+                    <i
+                      class="pi pi-check-circle text-green-500 cursor-pointer"
+                      (click)="this.activeTabViewIndex = $index"
+                    ></i>
+                    } -->
                   </div>
-                  <div class="flex flex-column text-right">
-                  <p>
-                    {{
-                      (liveDataMap[stock.symbol]
-                        ? liveDataMap[stock.symbol].price
-                        : stock.current_price
-                      ).toFixed(2)
-                    }}
-                  </p>
-                  <div
-                    class="flex text-xs"
-                    [ngStyle]="
-                      (liveDataMap[stock.symbol]
-                        ? liveDataMap[stock.symbol].changePercent
-                        : 0) < 0
-                        ? { color: 'red' }
-                        : { color: 'green' }
-                    "
-                  >
-                    <span class="mr-2">{{
-                      (liveDataMap[stock.symbol]
-                        ? liveDataMap[stock.symbol].change
-                        : 0
-                      ).toFixed(2)
-                    }}</span>
-  
-                    (<span
-                      >{{
-                        (liveDataMap[stock.symbol]
-                          ? liveDataMap[stock.symbol].changePercent
-                          : 0
-                        ).toFixed(2)
-                      }}%</span
-                    >)
-                  </div>
+                  }
                 </div>
-                </div>
-                }
-              </p-tabPanel>
-  
-              <p-dialog
-                header="Edit watchlist name"
-                [modal]="true"
-                [closable]="false"
-                [visible]="watchList._id === editWatchList?._id"
-              >
-                <div class="flex flex-column gap-2">
-                  <label class="text-xs" for="watchList">watchlist name </label>
-                  <input
-                    #editWatchListName
-                    pInputText
-                    id="watchList"
-                    [value]="editWatchList?.watchListName"
-                  />
-                </div>
-  
-                <div class="flex justify-content-end gap-2 mt-3">
-                  <p-button
-                    label="Cancel"
-                    size="small"
-                    severity="secondary"
-                    (onClick)="editWatchList = undefined"
-                  />
-                  <p-button
-                    label="Delete"
-                    size="small"
-                    severity="danger"
-                    (onClick)="deleteWatchList()"
-                  />
-                  <p-button
-                    label="Save"
-                    size="small"
-                    [disabled]="!editWatchListName.value.length"
-                    (onClick)="updatedWatchListName(editWatchListName.value)"
-                  />
-                </div>
-              </p-dialog>
-  
-              }
-            </p-tabView>
+              </ng-template>
+            </p-overlayPanel>
+
+            <p
+              class="font-normal cursor-pointer text-xs"
+              (click)="selectingStock(item)"
+            >
+              {{ item.name }}
+            </p>
+          </div>
+          <div class="flex flex-column text-right">
+            <p>
+              {{
+                (liveDataMap[item.symbol]
+                  ? liveDataMap[item.symbol].price
+                  : item.current_price
+                ).toFixed(2)
+              }}
+            </p>
+            <div
+              class="flex text-xs"
+              [ngStyle]="
+                (liveDataMap[item.symbol]
+                  ? liveDataMap[item.symbol].changePercent
+                  : 0) < 0
+                  ? { color: 'red' }
+                  : { color: 'green' }
+              "
+            >
+              <span class="mr-2">{{
+                (liveDataMap[item.symbol]
+                  ? liveDataMap[item.symbol].change
+                  : 0
+                ).toFixed(2)
+              }}</span>
+
+              (<span
+                >{{
+                  (liveDataMap[item.symbol]
+                    ? liveDataMap[item.symbol].changePercent
+                    : 0
+                  ).toFixed(2)
+                }}%</span
+              >)
+            </div>
+          </div>
+        </div>
+
+        } @empty {
+        <li>There are no items.</li>
+        }
+      </div>
+    </ng-template>
+  </p-card>
+
+  <p-card
+    [style]="{
+      height: 'calc(50vh - 3.8rem)',
+      overflow: 'hidden',
+      border: ' solid 1px #e6e9ed',
+      'box-shadow': 'unset'
+    }"
+    class="w-full"
+  >
+    <ng-template pTemplate="header">
+      <div class="h-full">
+        <div class="px-3 py-2 flex justify-content-between align-items-center">
+          <div class="flex gap-2">
+            <span class="text-base font-medium">My watchlist</span>
+            <p-button
+              icon="pi pi-plus"
+              size="small"
+              aria-label="Save"
+              [style]="{
+                padding: '0px',
+                width: '16px',
+                'border-radius': '0px'
+              }"
+              (onClick)="createWatchListDialogVisible = true"
+              [outlined]="true"
+            />
+          </div>
+          <h5 class="text-base font-medium">
+            {{ getWatchListStocksCount() }} Items
+          </h5>
+        </div>
+      </div>
+    </ng-template>
+    <ng-template pTemplate="subHeader">
+      <p-tabView
+        [style]="{ padding: '0px', 'font-size': '12px', height: 1200 - 636 + 'px', 'overflow-y': 'auto','min-height': '230px',  }"
+        (activeIndexChange)="this.activeTabViewIndex = $event"
+        [activeIndex]="activeTabViewIndex"
+      >
+        @for( watchList of watchListData;track $index){
+        <p-tabPanel>
+          <ng-template pTemplate="header">
+            <div (dblclick)="editWatchList = watchList">
+              {{ watchList.watchListName }}
+            </div>
           </ng-template>
-        </p-card>
+          @for(stock of watchList.stocks;track $index){ @if($index){
+          <p-divider />
+          }
+          <div class="flex justify-content-between">
+            <div class="flex align-items-center gap-2">
+              <i
+                class="pi pi-trash cursor-pointer"
+                [style]="{ 'font-size': '14px', color: 'tomato' }"
+                (click)="deleteWatchListItem(watchList, stock)"
+              ></i>
+              <div>
+                {{ stock.symbol }}
+              </div>
+            </div>
+            <div class="flex flex-column text-right">
+              <p>
+                {{
+                  (liveDataMap[stock.symbol]
+                    ? liveDataMap[stock.symbol].price
+                    : 0
+                  ).toFixed(2)
+                }}
+              </p>
+              <div
+                class="flex text-xs"
+                [ngStyle]="
+                  (liveDataMap[stock.symbol]
+                    ? liveDataMap[stock.symbol].changePercent
+                    : 0) < 0
+                    ? { color: 'red' }
+                    : { color: 'green' }
+                "
+              >
+                <span class="mr-2">{{
+                  (liveDataMap[stock.symbol]
+                    ? liveDataMap[stock.symbol].change
+                    : 0
+                  ).toFixed(2)
+                }}</span>
+
+                (<span
+                  >{{
+                    (liveDataMap[stock.symbol]
+                      ? liveDataMap[stock.symbol].changePercent
+                      : 0
+                    ).toFixed(2)
+                  }}%</span
+                >)
+              </div>
+            </div>
+          </div>
+          }
+        </p-tabPanel>
+
+        <p-dialog
+          header="Edit watchlist name"
+          [modal]="true"
+          [closable]="false"
+          [visible]="watchList._id === editWatchList?._id"
+        >
+          <div class="flex flex-column gap-2">
+            <label class="text-xs" for="watchList">watchlist name </label>
+            <input
+              #editWatchListName
+              pInputText
+              id="watchList"
+              [value]="editWatchList?.watchListName"
+            />
+          </div>
+
+          <div class="flex justify-content-end gap-2 mt-3">
+            <p-button
+              label="Cancel"
+              size="small"
+              severity="secondary"
+              (onClick)="editWatchList = undefined"
+            />
+            <p-button
+              label="Delete"
+              size="small"
+              severity="danger"
+              (onClick)="deleteWatchList()"
+            />
+            <p-button
+              label="Save"
+              size="small"
+              [disabled]="!editWatchListName.value.length"
+              (onClick)="updatedWatchListName(editWatchListName.value)"
+            />
+          </div>
+        </p-dialog>
+
+        }
+      </p-tabView>
+    </ng-template>
+  </p-card>
 </div>
 
 <p-dialog
-    header="Create watchList name"
-    [modal]="true"
-    [closable]="false"
-    [visible]="createWatchListDialogVisible"
-  >
-    <div class="flex flex-column gap-2">
-      <label class="text-xs" for="watchList">Watchlist name </label>
-      <input
-        pInputText
-        id="watchList"
-        [(ngModel)]="createWatchListName"
-        placeholder="Enter watchlist name"
-      />
-    </div>
+  header="Create watchList name"
+  [modal]="true"
+  [closable]="false"
+  [visible]="createWatchListDialogVisible"
+>
+  <div class="flex flex-column gap-2">
+    <label class="text-xs" for="watchList">Watchlist name </label>
+    <input
+      pInputText
+      id="watchList"
+      [(ngModel)]="createWatchListName"
+      placeholder="Enter watchlist name"
+    />
+  </div>
 
-    <div class="flex justify-content-end gap-2 mt-3">
-      <p-button
-        label="Cancel"
-        size="small"
-        severity="secondary"
-        (onClick)="cancelNewWatchList()"
-      />
-      <p-button
-        label="Save"
-        size="small"
-        [disabled]="!createWatchListName.length"
-        (onClick)="createWatchList()"
-      />
-    </div>
-  </p-dialog>
+  <div class="flex justify-content-end gap-2 mt-3">
+    <p-button
+      label="Cancel"
+      size="small"
+      severity="secondary"
+      (onClick)="cancelNewWatchList()"
+    />
+    <p-button
+      label="Save"
+      size="small"
+      [disabled]="!createWatchListName.length"
+      (onClick)="createWatchList()"
+    />
+  </div>
+</p-dialog>
