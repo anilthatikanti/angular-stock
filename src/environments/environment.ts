@@ -12,9 +12,6 @@ export const environment = {
   useEmulators: false,
 };
 
-//   export const WEB_APP_URL = 'https://angular-stock.netlify.app';
-// export const SERVER_URL = 'https://api.dev.anilthatikanti.space';
-// export const WEB_SOCKET = 'wss://api.dev.anilthatikanti.space';
-export const WEB_APP_URL = 'https://localhost:4200';
-export const SERVER_URL = 'http://localhost:3000';
-export const WEB_SOCKET = 'wss://localhost:3000';
+export const WEB_APP_URL = 'https://angular-stock.netlify.app';
+export const SERVER_URL = 'https://node-mongoose-server.onrender.com';
+export const WEB_SOCKET = 'wss://node-mongoose-server.onrender.com';
