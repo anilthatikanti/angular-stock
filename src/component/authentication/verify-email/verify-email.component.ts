@@ -109,7 +109,7 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
       await applyActionCode(this.firebaseAuth, this.oobCode);
       this.mode = 'emailVerifySuccess';
     } catch (error: any) {
-      console.log('verifyEmail: [ERR] ', error);
+      console.error('verifyEmail: [ERR] ', error);
       if (error.code == 'auth/invalid-action-code') {
         this.emailVerificationFailureMessage =
           'Either your verification link has expired or the link has already been used';

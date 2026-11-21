@@ -103,7 +103,7 @@ export class LoginComponent implements OnInit {
         });
       }
     } catch (error: any) {
-      console.log('onClickLogin [ERR]: ', error);
+      console.error('onClickLogin [ERR]: ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
     }
   }
@@ -134,7 +134,7 @@ export class LoginComponent implements OnInit {
       }
       // this.router.navigate(['']);
     } catch (error: any) {
-      console.log('onGoogleSignup [ERR]: ', error);
+      console.error('onGoogleSignup [ERR]: ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
     } finally {
     }
@@ -150,7 +150,7 @@ export class LoginComponent implements OnInit {
       let result = await signInWithPopup(auth, provider);
       const credential = OAuthProvider.credentialFromResult(result);
     } catch (error: any) {
-      console.log('onMicrosoftSignup [ERR]: ', error);
+      console.error('onMicrosoftSignup [ERR]: ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
     }
   }

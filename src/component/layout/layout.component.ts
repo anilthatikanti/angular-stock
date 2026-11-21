@@ -174,7 +174,7 @@ export class LayoutComponent implements OnInit {
         });
       }
     } catch (error: any) {
-      console.log('updatePassword [ERR]: ', error);
+      console.error('updatePassword [ERR]: ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
     }
   }
@@ -210,7 +210,7 @@ export class LayoutComponent implements OnInit {
         }
       }
     } catch (error: any) {
-      console.log('changePasswordFn [ERR]: ', error);
+      console.error('changePasswordFn [ERR]: ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
     }
   }
@@ -236,7 +236,7 @@ export class LayoutComponent implements OnInit {
 
       this.changePassword = false;
     } catch (error: any) {
-      console.log('createPassword [ERR]:', error);
+      console.error('createPassword [ERR]:', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
     }
   }

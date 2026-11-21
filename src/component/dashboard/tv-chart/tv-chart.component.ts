@@ -59,6 +59,7 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
   private chartDataLimit: number = 5000;
   private chartUpdateTimeout: any;
   private resizeObserver?: ResizeObserver;
+  private historyRequestInFlight: string | null = null;
   isChartLoading: boolean = false;
   
   timeIntervalOptions: { name: string; code: string }[] = [
@@ -363,18 +364,23 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   async displayChart(stock: IStockData = this.selectedStock) {
-    if (!this.ChartAreaSeries) {
-      console.warn('Chart not initialized yet');
-      return;
+    if (!this.ChartAreaSeries || !stock) {
+      return; // chart not created yet; initializeChart() loads it once ready
     }
+
+    const url = `${SERVER_URL}/stocks/history?symbol=${encodeURIComponent(stock.symbol)}&interval=${this.interval.code}&period=${this.timePeriod.code}`;
+    // The chart is asked to load from several places at start-up (chart ready, stock
+    // selected); don't send the same history request again while one is in flight.
+    if (url === this.historyRequestInFlight) return;
+    this.historyRequestInFlight = url;
 
     this.isChartLoading = true;
     try {
       const historyData: HistoryData = await firstValueFrom(
-        this.http.get<HistoryData>(
-          `${SERVER_URL}/stocks/history?symbol=${stock.symbol}&interval=${this.interval.code}&period=${this.timePeriod.code}`
-        )
+        this.http.get<HistoryData>(url)
       );
+      // A newer request (other stock/interval) was started meanwhile: drop this result.
+      if (this.historyRequestInFlight !== url) return;
 
       if (historyData.status) {
         this.stockHistoryData = historyData.payload
@@ -407,7 +413,11 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
         detail: 'Failed to fetch stock history data.',
       });
     } finally {
-      this.isChartLoading = false;
+      // Only the latest request ends the loading state.
+      if (this.historyRequestInFlight === url) {
+        this.historyRequestInFlight = null;
+        this.isChartLoading = false;
+      }
     }
   }
 

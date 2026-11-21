@@ -82,7 +82,7 @@ export class ResetPaswwordComponent {
         this.isPasswordResetSuccess = true;
       }
     } catch (error: any) {
-      console.log('resetPassword [ERR]: ', error);
+      console.error('resetPassword [ERR]: ', error);
       if (error.code == 'auth/invalid-action-code') {
         this.router.navigate(['/auth/login']);
       } else if (error.code == 'auth/invalid-action-code') {

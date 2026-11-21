@@ -8,9 +8,7 @@ import { StockService } from '../services/stock.service';
 export class GetStockNamePipe implements PipeTransform {
   constructor(private stockService: StockService) {}
   transform(id: number): number {
-    let value: number = 0;
-
-    console.log('value', value);
+    let value: number = 0;
     return value;
   }
 }

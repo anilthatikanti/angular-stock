@@ -173,8 +173,7 @@ export class StorageComponent implements OnInit {
     if (file.size < 1024 * 1024) {
       try {
         this.uploadFileBtnLoading = true;
-        // Manually send file to the backend
-        console.log('this.currentFolder', this.currentFolder);
+        // Manually send file to the backend
         const formData = new FormData();
         formData.append('folderId', this.currentFolder._id);
         formData.append('file', file);

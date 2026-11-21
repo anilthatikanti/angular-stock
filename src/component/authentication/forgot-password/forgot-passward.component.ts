@@ -70,7 +70,7 @@ export class ForgotPasswordComponent {
       // } else {
       firebaseErrorMessages(error.code, this.toast.messageService!);
       // }
-      console.log('forgotPassword [ERR]: ', error);
+      console.error('forgotPassword [ERR]: ', error);
     } finally {
       this.isResetPasswordButtonLoading = false;
     }

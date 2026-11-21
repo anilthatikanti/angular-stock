@@ -123,7 +123,7 @@ export const firebaseErrorMessages = (
       });
       break;
     default:
-      console.log('@@ firebaseErrorMessages [ERR]', message);
+      console.error('@@ firebaseErrorMessages [ERR]', message);
       messageService.add({
         severity: 'error',
         summary: 'Error',
@@ -190,7 +190,7 @@ export const logoutUser = async (firebaseAuth: Auth, force: boolean = true) => {
       window.location.reload();
     }
   } catch (error: any) {
-    console.log('logoutUser: [ERR]', error.message);
+    console.error('logoutUser: [ERR]', error.message);
   }
 };
 
@@ -204,8 +204,7 @@ export const sendUserEmailVerificationLink = async (
   appUrl: string,
   auth: Auth,
   messageService: MessageService
-) => {
-  console.log('appUrl', appUrl);
+) => {
   let actionCodeSettings = {
     url: environment.production ? `https://${appUrl}` : WEB_APP_URL,
     handleCodeInApp: true,
@@ -213,8 +212,7 @@ export const sendUserEmailVerificationLink = async (
   try {
     if (environment.useEmulators) {
       await sendEmailVerification(auth.currentUser!);
-    } else {
-      console.log('actionCodeSettings', actionCodeSettings);
+    } else {
       await sendEmailVerification(auth.currentUser!, actionCodeSettings);
     }
     messageService.add({
@@ -224,7 +222,7 @@ export const sendUserEmailVerificationLink = async (
     });
     return true;
   } catch (error: any) {
-    console.log('sendUserEmailVerificationLink: [ERR]: ', error.message);
+    console.error('sendUserEmailVerificationLink: [ERR]: ', error.message);
     messageService.add({
       severity: 'error',
       summary: 'Error',
@@ -253,7 +251,7 @@ export const sendUserEmailVerificationLink = async (
 //     );
 //     return createUserResponse;
 //   } catch (error: any) {
-//     console.log('createUser [ERR]: ', error);
+//     console.error('createUser [ERR]: ', error);
 //     return null;
 //   }
 // };
@@ -288,7 +286,7 @@ export const sendUserEmailVerificationLink = async (
 //     );
 //     return response?.status ?? false;
 //   } catch (error: any) {
-//     console.log('verifyMobileNumberAlreadyExists [ERR]: ', error);
+//     console.error('verifyMobileNumberAlreadyExists [ERR]: ', error);
 //     return false;
 //   }
 // };

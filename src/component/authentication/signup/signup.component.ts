@@ -110,7 +110,7 @@ export class SignupComponent implements OnInit {
         });
       }
     } catch (error: any) {
-      console.log('signupSubmit [ERR] ', error);
+      console.error('signupSubmit [ERR] ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
     } finally {
       this.isSignupButtonLoading = false;
