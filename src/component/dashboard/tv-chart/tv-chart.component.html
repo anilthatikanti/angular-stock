@@ -33,7 +33,7 @@
                 [options]="timeIntervalOptions"
                 [(ngModel)]="interval"
                 optionLabel="name"
-                (ngModelChange)="displayChart(selectedStock)"
+                (ngModelChange)="onIntervalChange()"
               />
             </div>
             <div class="flex align-items-center gap-2">
@@ -42,6 +42,7 @@
                 [options]="timePeriodOptions"
                 [(ngModel)]="timePeriod"
                 optionLabel="name"
+                optionDisabled="disabled"
                 (ngModelChange)="displayChart(selectedStock)"
               />
             </div>

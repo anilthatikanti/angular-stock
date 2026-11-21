@@ -72,8 +72,8 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     { name: '1 Month', code: '1mo' },
     { name: '3 Months', code: '3mo' }
   ];
-  timePeriod: { name: string; code: string } = { name: '7 Days', code: '7d' };
-  timePeriodOptions: { name: string; code: string }[] = [
+  timePeriod: { name: string; code: string; disabled?: boolean } = { name: '7 Days', code: '7d' };
+  timePeriodOptions: { name: string; code: string; disabled?: boolean }[] = [
     { name: '1 Day', code: '1d' },
     { name: '7 Days', code: '7d' },
     { name: '1 Month', code: '1m' },
@@ -90,10 +90,54 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
       this.chart.resize(width, height - 275);
     }
   }
+  // Yahoo only serves intraday data for a limited look-back window (in days).
+  private readonly maxRangeDaysByInterval: Record<string, number> = {
+    '1m': 7,
+    '2m': 60,
+    '5m': 60,
+    '15m': 60,
+    '30m': 60,
+    '1h': 730,
+  };
+
   constructor(
     private messageService: MessageService,
     private http: HttpClient
-  ) {}
+  ) {
+    this.updatePeriodOptions();
+  }
+
+  private periodToDays(code: string): number {
+    const match = code.match(/^(\d+)([dwmy])$/);
+    if (!match) return 0;
+    const perUnit: Record<string, number> = { d: 1, w: 7, m: 30, y: 365 };
+    return parseInt(match[1]) * perUnit[match[2]];
+  }
+
+  private isValidCombination(periodCode: string, intervalCode: string): boolean {
+    const days = this.periodToDays(periodCode);
+    const maxDays = this.maxRangeDaysByInterval[intervalCode] ?? Infinity;
+    const intervalMs = this.parseIntervalToMs(intervalCode);
+    // Within Yahoo's look-back limit, and long enough to hold more than one point.
+    return days <= maxDays && days * 24 * 60 * 60 * 1000 > intervalMs;
+  }
+
+  // Disable periods Yahoo can't serve for the chosen interval.
+  private updatePeriodOptions() {
+    for (const option of this.timePeriodOptions) {
+      option.disabled = !this.isValidCombination(option.code, this.interval.code);
+    }
+  }
+
+  onIntervalChange() {
+    this.updatePeriodOptions();
+    if (!this.isValidCombination(this.timePeriod.code, this.interval.code)) {
+      // Pick the longest period that works with this interval.
+      const fallback = [...this.timePeriodOptions].reverse().find((o) => !o.disabled);
+      if (fallback) this.timePeriod = fallback;
+    }
+    this.displayChart(this.selectedStock);
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     // console.log('selectedStock', this.selectedChartStatisticData)
@@ -334,53 +378,32 @@ private updateChartWithData(data: ITickerData) {
   }
 
   try {
-    const intervalMs = this.parseIntervalToMs(this.interval.code);
-    if (!intervalMs) return;
+    const intervalSec = this.parseIntervalToMs(this.interval.code) / 1000;
+    if (!intervalSec || this.stockHistoryData.length === 0) return;
 
-    const lastTimer = new Date(this.selectedChartStatisticData.Datetime);
-    const nextExpectedTime = new Date(lastTimer.getTime() + intervalMs);
-    const nextTimeInAsia = nextExpectedTime.toLocaleString('sv', {
-      timeZone: 'Asia/Kolkata',
-    });
+    // Chart times are UTC epoch seconds (same as the history data), so no
+    // time-zone conversion is needed here.
+    const last = this.stockHistoryData[this.stockHistoryData.length - 1];
+    const lastTime = Number(last.time);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const intervalsPassed = Math.floor((nowSec - lastTime) / intervalSec);
 
-    const now = new Date();
-
-    let sameValue =
-      this.stockHistoryData[this.stockHistoryData.length - 1].value !==
-      data.price;
-    let sameTime =
-      Date.parse(nextTimeInAsia) / 1000 !==
-      this.stockHistoryData[this.stockHistoryData.length - 1].time;
-
-    const isWithinRestrictedTime =
-      (now.getHours() >= 15 && now.getMinutes() >= 30) ||
-      (now.getHours() < 9 && now.getMinutes() > 15);
-
-    if (
-      new Date().getTime() > nextExpectedTime.getTime() &&
-      isWithinRestrictedTime &&
-      sameValue &&
-      sameTime
-    ) {
-      const object: { time: Time; value: number } = {
-        time: (Date.parse(nextTimeInAsia) / 1000) as Time,
-        value: data.price,
-      };
-
-      this.selectedChartStatisticData.Datetime = nextTimeInAsia;
-      this.stockHistoryData.push(object);
+    // marketHours comes from the server (1 = regular NSE session, holidays included).
+    if (data.marketHours === 1 && intervalsPassed >= 1) {
+      // A new candle period has started: add a point aligned to the interval.
+      const nextTime = lastTime + intervalsPassed * intervalSec;
+      this.stockHistoryData.push({ time: nextTime as Time, value: data.price });
+      this.selectedChartStatisticData.Datetime = new Date(nextTime * 1000).toISOString();
 
       if (this.stockHistoryData.length > this.chartDataLimit) {
-        this.stockHistoryData = this.stockHistoryData.slice(
-          -this.chartDataLimit
-        );
+        this.stockHistoryData = this.stockHistoryData.slice(-this.chartDataLimit);
       }
-    } else {
-      this.stockHistoryData[this.stockHistoryData.length - 1].value =
-        data.price;
+      this.ChartAreaSeries.setData(this.stockHistoryData);
+    } else if (last.value !== data.price) {
+      // Same candle period: move the latest point.
+      last.value = data.price;
+      this.ChartAreaSeries.update(last);
     }
-
-    this.ChartAreaSeries.setData(this.stockHistoryData);
   } catch (error) {
     console.error('Error updating chart data:', error);
   }

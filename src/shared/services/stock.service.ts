@@ -24,15 +24,19 @@ export class StockService {
     ITickerData | IClosed
   >();
   dataMap: Map<number, ITickerData> = new Map<number, ITickerData>();
-  ws!: WebSocket;
+  ws?: WebSocket;
   isTockensLoaded: boolean = false;
   watchListData: IWatchList[] = [];
+  private symbols: string[] = [];
+  private intentionalClose: boolean = false;
   private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
-  private reconnectDelay: number = 1000;
-  private messageBuffer: ITickerData[] = [];
-  private bufferSize: number = 10;
-  private bufferTimeout: number = 100; // ms
+  private reconnectTimer?: ReturnType<typeof setTimeout>;
+  private readonly baseReconnectDelay: number = 1000; // 1s, 2s, 4s ... up to 30s
+  private readonly maxReconnectDelay: number = 30000;
+  private messageBuffer: (ITickerData | IClosed)[] = [];
+  private bufferTimer?: ReturnType<typeof setTimeout>;
+  private readonly bufferSize: number = 10;
+  private readonly bufferTimeout: number = 100; // ms
 
   constructor(private http: HttpClient, private firebaseAuth: Auth) {}
 
@@ -50,85 +54,110 @@ export class StockService {
     }
   }
 
-  private async connectWebSocket(nifty50InstrumentalTokens: string[]) {
+  private async connectWebSocket() {
+    clearTimeout(this.reconnectTimer);
     try {
-      const jwtToken: any = await this.firebaseAuth.currentUser?.getIdToken();
+      // getIdToken() refreshes an expired token, so reconnects after 1h+ still authenticate.
+      const jwtToken = await this.firebaseAuth.currentUser?.getIdToken();
       if (!jwtToken) {
         throw new Error('No authentication token available');
       }
-      if (!this.ws) {
-        this.ws = new WebSocket(WEB_SOCKET, jwtToken);
-      }
-      this.ws.onopen = () => {
+      if (this.intentionalClose) return;
+
+      // Always start from a fresh socket; a closed WebSocket can't be reopened.
+      this.closeSocket();
+      const ws = new WebSocket(WEB_SOCKET, jwtToken);
+      this.ws = ws;
+
+      ws.onopen = () => {
         console.log('WebSocket connected');
         this.reconnectAttempts = 0;
-        this.ws.send(
+        ws.send(
           JSON.stringify({
             action: 'subscribe',
-            variables: nifty50InstrumentalTokens,
+            variables: this.symbols,
             type: 'ltp',
           })
         );
       };
 
-      this.ws.onerror = (error) => {
+      ws.onerror = (error) => {
+        // 'close' always follows 'error', and reconnecting is handled there.
         console.error('WebSocket error:', error);
-        this.handleReconnect(nifty50InstrumentalTokens);
       };
 
-      this.ws.onclose = (event) => {
-        console.warn('WebSocket closed:', event);
-        // this.handleReconnect(nifty50InstrumentalTokens);
+      ws.onclose = (event) => {
+        if (this.ws !== ws) return; // an older socket we replaced
+        console.warn(`WebSocket closed (code ${event.code})`);
+        this.ws = undefined;
+        this.scheduleReconnect();
       };
 
-      this.ws.onmessage = (event) => {
+      ws.onmessage = (event) => {
         try {
-          const stocks = JSON.parse(event.data);
-          if (Array.isArray(stocks)) {
-            this.bufferMessages(stocks);
-          } else {
-            this.bufferMessages([stocks]);
-          }
+          const data = JSON.parse(event.data);
+          const messages = Array.isArray(data) ? data : [data];
+          // Pass on only price ticks and "market closed" notices; subscription
+          // acknowledgements and errors are not ticker data.
+          const relevant = messages.filter((m: any) => {
+            if (m?.id) return true;
+            if (m?.type === 'closed') return true;
+            if (m?.error) console.warn('WebSocket server message:', m.error);
+            return false;
+          });
+          if (relevant.length) this.bufferMessages(relevant);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
       };
     } catch (error) {
       console.error('Error establishing WebSocket connection:', error);
-      // this.handleReconnect(nifty50InstrumentalTokens);
+      this.scheduleReconnect();
     }
   }
 
-  private handleReconnect(tokens: string[]) {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      console.log(
-        `Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`
-      );
-      setTimeout(
-        () => this.connectWebSocket(tokens),
-        this.reconnectDelay * this.reconnectAttempts
-      );
-    } else {
-      console.error('Max reconnection attempts reached');
+  private scheduleReconnect() {
+    if (this.intentionalClose) return;
+    clearTimeout(this.reconnectTimer);
+    const delay = Math.min(
+      this.baseReconnectDelay * 2 ** this.reconnectAttempts,
+      this.maxReconnectDelay
+    );
+    this.reconnectAttempts++;
+    console.log(`Reconnecting WebSocket in ${delay / 1000}s (attempt ${this.reconnectAttempts})`);
+    this.reconnectTimer = setTimeout(() => this.connectWebSocket(), delay);
+  }
+
+  private closeSocket() {
+    const ws = this.ws;
+    this.ws = undefined;
+    if (ws && ws.readyState !== WebSocket.CLOSED) {
+      ws.onclose = null;
+      ws.close();
     }
   }
 
-  private bufferMessages(messages: ITickerData[]) {
-    this.messageBuffer = [...this.messageBuffer, ...messages];
+  private bufferMessages(messages: (ITickerData | IClosed)[]) {
+    this.messageBuffer.push(...messages);
 
     if (this.messageBuffer.length >= this.bufferSize) {
       this.flushBuffer();
-    } else {
-      setTimeout(() => this.flushBuffer(), this.bufferTimeout);
+    } else if (!this.bufferTimer) {
+      // One timer per batch, not one per message.
+      this.bufferTimer = setTimeout(() => this.flushBuffer(), this.bufferTimeout);
     }
   }
 
   private flushBuffer() {
-    if (this.messageBuffer.length > 0) {
-      this.messageBuffer.forEach((stock) => this.liveData$.next(stock));
+    clearTimeout(this.bufferTimer);
+    this.bufferTimer = undefined;
+    if (this.messageBuffer.length === 0 || this.liveData$.closed) {
       this.messageBuffer = [];
+      return;
     }
+    const batch = this.messageBuffer;
+    this.messageBuffer = [];
+    batch.forEach((message) => this.liveData$.next(message));
   }
 
   async getWatchListData() {
@@ -146,14 +175,20 @@ export class StockService {
     if (this.liveData$?.closed || !this.liveData$) {
       this.liveData$ = new ReplaySubject<ITickerData | IClosed>(1);
     }
-    await this.connectWebSocket(nifty50InstrumentalTokens);
+    this.symbols = nifty50InstrumentalTokens;
+    this.intentionalClose = false;
+    this.reconnectAttempts = 0;
+    await this.connectWebSocket();
   }
 
   disconnect() {
-    if (this.ws) {
-      console.log('🚫 Closing WebSocket...');
-      this.ws.close(); // ✅ Properly close WebSocket   // ✅ Prevent reconnection issues
-    }
+    this.intentionalClose = true; // stops the reconnect loop
+    clearTimeout(this.reconnectTimer);
+    clearTimeout(this.bufferTimer);
+    this.bufferTimer = undefined;
+    this.messageBuffer = [];
+    if (this.ws) console.log('🚫 Closing WebSocket...');
+    this.closeSocket();
   }
   async deleteWatchListItem(watchListId: string, stockSymbol: string) {
     let res = await firstValueFrom(

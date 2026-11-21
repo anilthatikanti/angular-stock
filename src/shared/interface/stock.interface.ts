@@ -42,6 +42,7 @@ export interface ITickerData {
   dayVolume: number;
   change: number;
   priceHint: number;
+  type?: string; // 'ltp' | 'ohlc' | 'full'
 }
 
 export interface IClosed {

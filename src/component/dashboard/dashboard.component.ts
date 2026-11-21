@@ -24,7 +24,7 @@ import { WatchList } from '../../shared/interface/watchList.interface';
 import { ToastModule } from 'primeng/toast';
 import { InputTextModule } from 'primeng/inputtext';
 import { FloatLabelModule } from 'primeng/floatlabel';
-import { debounceTime, firstValueFrom, Subject } from 'rxjs';
+import { debounceTime, firstValueFrom, Subject, Subscription } from 'rxjs';
 import { DialogModule } from 'primeng/dialog';
 import { createChart, Time } from 'lightweight-charts';
 import { HttpClient } from '@angular/common/http';
@@ -96,6 +96,7 @@ export class DashboardComponent implements OnInit {
   chartData!: ITickerData;
   isChartReady: boolean = false;
   isMarketClosed = false;
+  private liveDataSub?: Subscription;
   constructor(
     private stockService: StockService,
     private messageService: MessageService,
@@ -143,21 +144,24 @@ export class DashboardComponent implements OnInit {
     await this.stockService.connect(symbols);
 
     // Subscribe to live data
-    this.stockService.liveData$.subscribe((data: ITickerData | any) => {
+    this.liveDataSub?.unsubscribe();
+    this.liveDataSub = this.stockService.liveData$.subscribe((data: ITickerData | any) => {
       if (data.type === 'closed') {
         this.isMarketClosed = true;
         this.loadingMessage = data.message;
         return;
       }
+      if (!data.id) return;
       this.liveDataMap[data.id] = data;
-      this.isMarketClosed = false;
-      if (this.selectedStock.symbol === data.id) {
+      // Ticks sent after the close carry marketHours = 0; only a live tick reopens the view.
+      if (data.marketHours === 1) this.isMarketClosed = false;
+      if (this.selectedStock?.symbol === data.id) {
         this.chartData = data;
       }
     });
   }
   ngOnDestroy() {
+    this.liveDataSub?.unsubscribe();
     this.stockService.disconnect();
-    this.stockService.liveData$.unsubscribe();
   }
 }
