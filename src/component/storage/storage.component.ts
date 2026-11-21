@@ -138,7 +138,7 @@ export class StorageComponent implements OnInit {
 
           // Build URL
           const apiUrl = this.searchValue
-            ? `${SERVER_URL}/files/search?query=${this.searchValue}&currentFolderId=${this.currentFolderId}&global=${queryParams['global']}`
+            ? `${SERVER_URL}/files/search?query=${encodeURIComponent(this.searchValue)}&currentFolderId=${this.currentFolderId}&global=${queryParams['global']}`
             : `${SERVER_URL}/files/get-folder-file?parentFolderId=${this.currentFolderId}`;
 
           const res: Response = await firstValueFrom(

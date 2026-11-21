@@ -116,7 +116,7 @@ export class BinComponent implements OnInit {
           this.searchValue = queryParams['search'] || '';
 
           const apiUrl = this.searchValue
-            ? `${SERVER_URL}/files/search?query=${this.searchValue}&currentFolderId=${this.currentFolderId}&global=false&from=bin`
+            ? `${SERVER_URL}/files/search?query=${encodeURIComponent(this.searchValue)}&currentFolderId=${this.currentFolderId}&global=false&from=bin`
             : `${SERVER_URL}/files/get-folder-file?parentFolderId=${this.currentFolderId}&from=bin`;
 
           const res: Response = await firstValueFrom(this.http.get<Response>(apiUrl));

@@ -1,19 +1,14 @@
 import { inject } from '@angular/core';
-import { Auth } from '@angular/fire/auth';
+import { Auth, authState } from '@angular/fire/auth';
 import { CanActivateFn, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
-export const negAuthGuard: CanActivateFn = (route, state) => {
+// Login/signup pages: a verified, logged-in user goes to the app instead.
+// Reads the login state once (no listener left behind).
+export const negAuthGuard: CanActivateFn = async () => {
   const firebaseAuth = inject(Auth);
   const router = inject(Router);
 
-  return new Promise((resolve, reject) => {
-    firebaseAuth.onAuthStateChanged((user) => {
-      if (user?.emailVerified) {
-        router.navigate(['']);
-        resolve(false);
-      } else {
-        resolve(true);
-      }
-    });
-  });
+  const user = await firstValueFrom(authState(firebaseAuth));
+  return user?.emailVerified ? router.createUrlTree(['']) : true;
 };
