@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import {
   logoutUser,
@@ -7,9 +7,7 @@ import {
 import { applyActionCode, Auth } from '@angular/fire/auth';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WEB_APP_URL } from '../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
 import { ToastService } from '../../../shared/services/toastService/toast.service';
-import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-verify-email',
@@ -18,7 +16,7 @@ import { firstValueFrom } from 'rxjs';
   templateUrl: './verify-email.component.html',
   styleUrl: './verify-email.component.css',
 })
-export class VerifyEmailComponent implements OnInit {
+export class VerifyEmailComponent implements OnInit, OnDestroy {
   email!: string;
   mode: string = '';
   oobCode: string = '';
@@ -31,12 +29,12 @@ export class VerifyEmailComponent implements OnInit {
   timerId!: any;
   emailVerified: boolean = false;
   emailVerificationFailureMessage: string = '';
+  private verifyPollId?: ReturnType<typeof setInterval>;
 
   constructor(
     private firebaseAuth: Auth,
     private activatedRoute: ActivatedRoute,
     private router: Router,
-    private http: HttpClient,
     private toast: ToastService
   ) {}
 
@@ -72,25 +70,38 @@ export class VerifyEmailComponent implements OnInit {
     }
   }
 
-  async userEmailVerifyStatusCheck() {
-    try {
-      const interval = setInterval(async () => {
+  // Polls until the email is verified, then reloads so the guard sends the user to the
+  // dashboard. The backend creates the user record on the first authenticated API call,
+  // so no extra request is needed here. (It used to POST to a hard-coded
+  // http://localhost:3000/user/create-user, which failed in production before the
+  // redirect and left users stuck on this page.)
+  userEmailVerifyStatusCheck() {
+    this.stopVerifyPolling();
+    this.verifyPollId = setInterval(async () => {
+      try {
         const user = this.firebaseAuth.currentUser;
-        if (user) {
-          await user.reload();
-          await user.getIdTokenResult(true);
-          if (user.emailVerified) {
-            clearInterval(interval);
-            const data = await firstValueFrom(
-              this.http.post('http://localhost:3000/user/create-user', { email: user.email })
-            );
-            window.location.href = this.router.url || WEB_APP_URL;
-          }
+        if (!user) return;
+        await user.reload();
+        if (user.emailVerified) {
+          this.stopVerifyPolling();
+          await user.getIdToken(true); // refresh so the token carries email_verified
+          window.location.href = this.router.url || WEB_APP_URL;
         }
-      }, 1000);
-    } catch (error) {
-      console.error('Error in userEmailVerifyStatusCheck:', error);
+      } catch (error) {
+        console.error('Error in userEmailVerifyStatusCheck:', error);
+      }
+    }, 3000);
+  }
+
+  private stopVerifyPolling() {
+    if (this.verifyPollId) {
+      clearInterval(this.verifyPollId);
+      this.verifyPollId = undefined;
     }
+  }
+
+  ngOnDestroy(): void {
+    this.stopVerifyPolling();
   }
 
   async applyVerificationCode() {
