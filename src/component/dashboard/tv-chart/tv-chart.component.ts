@@ -54,11 +54,13 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
   
   private lastChartUpdate: number = 0;
   private chartUpdateThrottle: number = 100; // ms
-  private chartDataLimit: number = 1000;
+  // Max points kept on the chart. 7 days of 1-minute NSE data is ~1,900 points; the old
+  // limit of 1000 silently cut the first days off.
+  private chartDataLimit: number = 5000;
   private chartUpdateTimeout: any;
+  private resizeObserver?: ResizeObserver;
   isChartLoading: boolean = false;
   
-  interval: { name: string; code: string } = { name: '1 Min', code: '1m' };
   timeIntervalOptions: { name: string; code: string }[] = [
     { name: '1 Min', code: '1m' },
     { name: '2 Min', code: '2m' },
@@ -72,7 +74,6 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     { name: '1 Month', code: '1mo' },
     { name: '3 Months', code: '3mo' }
   ];
-  timePeriod: { name: string; code: string; disabled?: boolean } = { name: '7 Days', code: '7d' };
   timePeriodOptions: { name: string; code: string; disabled?: boolean }[] = [
     { name: '1 Day', code: '1d' },
     { name: '7 Days', code: '7d' },
@@ -81,6 +82,9 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     { name: '6 Months', code: '6m' },
     { name: '1 Year', code: '1y' }
   ];
+  // Selected values are the option objects themselves so the dropdowns can match them.
+  interval: { name: string; code: string } = this.timeIntervalOptions[0]; // 1 Min
+  timePeriod: { name: string; code: string; disabled?: boolean } = this.timePeriodOptions[1]; // 7 Days
   @HostListener('window:resize', ['$event'])
   onWindowResize() {
     this.innerHeight = window.innerHeight;
@@ -169,16 +173,13 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
   getFormattedChange(symbol: string): string {
     const data = this.liveDataMap[symbol];
     if (!data) return '0.00 (0.00%)';
-    else if (
-      !this.isChartLoading &&
-      data.price > this.selectedChartStatisticData?.High
-    )
-      this.selectedChartStatisticData.High = data.price;
-    else if (
-      !this.isChartLoading &&
-      data.price < this.selectedChartStatisticData?.Low
-    )
-      this.selectedChartStatisticData.Low = data.price;
+    const stats = this.selectedChartStatisticData;
+    if (!this.isChartLoading && stats && symbol === this.selectedStock?.symbol && data.price) {
+      // Keep the day's panel current: Close follows the live price; High/Low widen.
+      stats.Close = data.price;
+      if (data.price > stats.High) stats.High = data.price;
+      if (stats.Low && data.price < stats.Low) stats.Low = data.price;
+    }
     const ch = (data?.change ?? 0).toFixed(2);
     const chp = (data?.changePercent ?? 0).toFixed(2);
     return `${data?.change >= 0 ? '+ ' : ''}${ch} (${
@@ -246,12 +247,42 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
             vertLines: { visible: false },
             horzLines: { visible: false },
           },
+          // Show times in the viewer's local time zone (the library defaults to UTC,
+          // which put NSE's 09:15-15:30 IST session at 03:45-10:00).
+          localization: {
+            timeFormatter: (time: number) =>
+              new Date(time * 1000).toLocaleString(undefined, {
+                day: '2-digit',
+                month: 'short',
+                year: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+              }),
+          },
           timeScale: {
             timeVisible: true,
             secondsVisible: false,
             fixLeftEdge: true,
             fixRightEdge: true,
             lockVisibleTimeRangeOnResize: true,
+            tickMarkFormatter: (time: number, tickMarkType: number) => {
+              const d = new Date(time * 1000);
+              switch (tickMarkType) {
+                case 0: // year
+                  return String(d.getFullYear());
+                case 1: // month
+                  return d.toLocaleString(undefined, { month: 'short' });
+                case 2: // day of month
+                  return String(d.getDate());
+                default: // time
+                  return d.toLocaleTimeString(undefined, {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  });
+              }
+            },
           },
           rightPriceScale: {
             borderVisible: false,
@@ -268,6 +299,16 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           this.chartContainerRef.nativeElement,
           chartOptions
         );
+
+        // Follow the container's width. It changes after the chart is created (loader,
+        // Nifty list, scrollbars) without a window resize; a stale width made the chart
+        // wider than its card and the price scale overflowed.
+        const container = this.chartContainerRef.nativeElement as HTMLElement;
+        this.resizeObserver = new ResizeObserver(() => {
+          const width = Math.floor(container.getBoundingClientRect().width);
+          if (width > 0 && this.chart) this.chart.applyOptions({ width });
+        });
+        this.resizeObserver.observe(container);
         this.ChartAreaSeries = this.chart.addAreaSeries({
           lineColor: '#2962FF',
           topColor: '#2962FF',
@@ -283,6 +324,42 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
         reject(error);
       }
     });
+  }
+
+  /**
+   * Values for the Open / Close / Low / High panel: the DAY's figures, not the last chart
+   * candle (with a 1-minute interval that is a single minute, often O = H = L = C).
+   * Uses the quote's day values when present, otherwise the candles of the latest
+   * trading day in the history.
+   */
+  private getDayStatistics(stock: IStockData, payload: any[]) {
+    const last = payload[payload.length - 1];
+    if (!last) return undefined; // no history -> panel hidden (template checks for it)
+    const ohlc = stock?.ohlc;
+    if (ohlc && ohlc.Open > 0 && ohlc.High > 0 && ohlc.Low > 0) {
+      return {
+        ...last,
+        Open: ohlc.Open,
+        High: ohlc.High,
+        Low: ohlc.Low,
+        Close: stock.current_price || ohlc.Close || last.Close,
+        Volume: ohlc.Volume,
+      };
+    }
+
+    // Fallback: candles from the same IST calendar day as the latest candle.
+    const istDay = (iso: string) =>
+      new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    const lastDay = istDay(last.Datetime);
+    const dayCandles = payload.filter((c) => istDay(c.Datetime) === lastDay);
+    return {
+      ...last,
+      Open: dayCandles[0].Open,
+      High: Math.max(...dayCandles.map((c) => c.High)),
+      Low: Math.min(...dayCandles.map((c) => c.Low)),
+      Close: last.Close,
+      Volume: dayCandles.reduce((sum, c) => sum + (c.Volume || 0), 0),
+    };
   }
 
   async displayChart(stock: IStockData = this.selectedStock) {
@@ -307,11 +384,20 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
             value: item.Close,
           }));
 
-        this.selectedChartStatisticData =
-          historyData.payload[historyData.payload.length - 1];
+        this.selectedChartStatisticData = this.getDayStatistics(
+          stock,
+          historyData.payload
+        );
         this.ChartAreaSeries.setData(this.stockHistoryData);
         this.chart.timeScale().fitContent();
         this.selectedStock = stock;
+        if (this.stockHistoryData.length === 0) {
+          this.messageService.add({
+            severity: 'info',
+            summary: 'No chart data',
+            detail: `No ${this.interval.name} data for ${stock.name} in ${this.timePeriod.name}.`,
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching history data:', error);
@@ -410,6 +496,7 @@ private updateChartWithData(data: ITickerData) {
 }
 
   ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
     if (this.chart) {
       this.chart.remove();
     }

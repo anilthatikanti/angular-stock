@@ -24,7 +24,7 @@
           [style]="{ 'background-color': '#E6EEF5' }"
         >
           <h5 class="text-lg font-medium">
-            {{ selectedStock.name }}
+            {{ selectedStock?.name }}
           </h5>
           <div class="flex align-items-center gap-2">
             <div class="flex align-items-center gap-2">
@@ -50,7 +50,7 @@
         </div>
         <div
           class="h-full w-full p-3 flex justify-content-between"
-          *ngIf="selectedStock.current_price"
+          *ngIf="selectedStock?.current_price"
         >
           <div class="h-full w-full flex flex-column justify-content-center">
             <h2 class="font-medium text-3xl">

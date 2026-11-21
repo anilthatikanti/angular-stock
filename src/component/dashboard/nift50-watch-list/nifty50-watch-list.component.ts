@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnDestroy,
+} from '@angular/core';
 import { Button } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
@@ -12,14 +19,20 @@ import {
 } from '../../../shared/interface/stock.interface';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { MessageService } from 'primeng/api';
-// import { WatchList } from '../../../shared/interface/watchList.interface';
-import {
-  StockService,
-  // watchListData,
-} from '../../../shared/services/stock.service';
+import { StockService } from '../../../shared/services/stock.service';
 import { TabViewModule } from 'primeng/tabview';
 import { FormsModule } from '@angular/forms';
-import { debounceTime, Subject } from 'rxjs';
+import {
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  from,
+  map,
+  of,
+  Subject,
+  Subscription,
+  switchMap,
+} from 'rxjs';
 
 @Component({
   selector: 'app-nifty50-watch-list',
@@ -37,7 +50,7 @@ import { debounceTime, Subject } from 'rxjs';
   templateUrl: './nifty50-watch-list.component.html',
   styleUrl: './nifty50-watch-list.component.css',
 })
-export class Nifty50WatchListComponent implements OnInit {
+export class Nifty50WatchListComponent implements OnInit, OnDestroy {
   @Input() nifty50: IStockData[] = [];
   @Input() liveDataMap: { [symbol: string]: ITickerData } = {};
   @Output() selectingStockEvent: EventEmitter<IStockData> =
@@ -50,30 +63,77 @@ export class Nifty50WatchListComponent implements OnInit {
   searchSubject: Subject<string> = new Subject();
 
   createWatchListDialogVisible: boolean = false;
+  private subscriptions = new Subscription();
 
   constructor(
     private messageService: MessageService,
     private stockService: StockService
   ) {
-    this.searchSubject.pipe(debounceTime(150)).subscribe((value) => {
-      this.nifty50 = this.stockService.nifty50Data.filter(
-        (data: IStockData) => {
-          return data.name.toUpperCase().startsWith(value.trim().toUpperCase());
-        }
-      );
-    });
+    // Search box: empty -> Nifty 50 list; text -> any ticker via /stocks/search.
+    // switchMap ignores results of older, slower searches.
+    this.subscriptions.add(
+      this.searchSubject
+        .pipe(
+          debounceTime(400),
+          map((value) => value.trim()),
+          distinctUntilChanged(),
+          switchMap((query) =>
+            query
+              ? from(this.stockService.searchStocks(query)).pipe(
+                  catchError(() => {
+                    this.messageService.add({
+                      severity: 'error',
+                      summary: 'Search error',
+                      detail: 'Unable to search stocks. Please try again.',
+                    });
+                    return of(null);
+                  })
+                )
+              : of(this.stockService.nifty50Data)
+          )
+        )
+        .subscribe((stocks) => {
+          if (stocks) this.nifty50 = stocks;
+        })
+    );
   }
 
   ngOnInit(): void {
     this.loadWatchListData();
   }
 
-  async loadWatchListData() {
-    this.watchListData = await this.stockService.getWatchListData();
-    console.log('this.watchListData', this.watchListData);
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
   }
+
+  async loadWatchListData() {
+    try {
+      this.watchListData = await this.stockService.getWatchListData();
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Watchlist error',
+        detail: 'Unable to load your watchlists. Please refresh the page.',
+      });
+      return;
+    }
+    this.syncLiveSymbols();
+  }
+
+  // Live prices for every stock in the watchlists, not only Nifty 50 ones.
+  private syncLiveSymbols() {
+    const symbols = this.watchListData.flatMap((w) =>
+      (w.stocks ?? []).map((s) => s.symbol)
+    );
+    this.stockService.setWatchListSymbols(symbols);
+  }
+
+  private isInWatchList(symbol: string, watchList: IWatchList): boolean {
+    return !!watchList.stocks?.some((s) => s.symbol === symbol);
+  }
+
   searchStock(event: any) {
-    this.searchSubject.next(event.target.value);
+    this.searchSubject.next(event.target.value ?? '');
   }
 
   selectingStock(stock: IStockData) {
@@ -81,28 +141,37 @@ export class Nifty50WatchListComponent implements OnInit {
   }
 
   async deleteWatchListItem(watchListItem: IWatchList, stockItem: IStock) {
-    let res = await this.stockService.deleteWatchListItem(
-      watchListItem._id,
-      stockItem.symbol
-    );
-    if (!res.status) {
+    try {
+      const res = await this.stockService.deleteWatchListItem(
+        watchListItem._id,
+        stockItem.symbol
+      );
+      if (!res.status) {
+        this.messageService.add({
+          severity: 'error',
+          summary: `Watchlist item delete error`,
+          detail: `${res.message}`,
+        });
+        return;
+      }
+    } catch {
       this.messageService.add({
         severity: 'error',
         summary: `Watchlist item delete error`,
-        detail: `${res.message}`,
+        detail: `Unable to delete ${stockItem.longName}. Please try again.`,
       });
       return;
     }
 
-    this.watchListData.forEach((watchList: IWatchList) => {
-      if (watchList._id === watchListItem._id) {
-        watchListItem = watchList;
-        watchList.stocks = watchList.stocks.filter(
-          (stock: IStock) => stock.symbol !== stockItem.symbol
-        );
-      }
-      return watchList;
-    });
+    const watchList = this.watchListData.find(
+      (w) => w._id === watchListItem._id
+    );
+    if (watchList) {
+      watchList.stocks = watchList.stocks.filter(
+        (stock: IStock) => stock.symbol !== stockItem.symbol
+      );
+    }
+    this.syncLiveSymbols();
     this.messageService.add({
       severity: 'success',
       summary: `${watchListItem.watchListName} stock deleted.`,
@@ -110,36 +179,58 @@ export class Nifty50WatchListComponent implements OnInit {
     });
   }
 
+  // "+" menu: works for Nifty 50 stocks and for any stock found by the search.
   async updateWatchList(
     op: any,
     event: any,
     stock: IStockData,
     watchListId: string
   ) {
-    let res = await this.stockService.addStockIntoWatchList(watchListId, stock);
-    if (!res.status) {
+    const watchList = this.watchListData.find((w) => w._id === watchListId);
+    if (!watchList) {
+      op.toggle(event);
+      return;
+    }
+    if (this.isInWatchList(stock.symbol, watchList)) {
       this.messageService.add({
-        severity: 'error',
-        summary: `Watchlist item add error`,
-        detail: `${res.message}`,
+        severity: 'info',
+        summary: 'Already added',
+        detail: `${stock.name} is already in ${watchList.watchListName}.`,
       });
       op.toggle(event);
       return;
     }
-    this.watchListData.forEach((watchList: IWatchList) => {
-      if (watchList._id === `${watchListId}`) {
-        let index = watchList.stocks.findIndex(
-          (item: IStock) => item.symbol === stock.symbol
-        );
-        if (index == -1) {
-          watchList.stocks.push({ symbol: stock.symbol, longName: stock.name });
-          this.messageService.add({
-            severity: 'success',
-            summary: `${watchList.watchListName} updated.`,
-            detail: `${stock.name} added into ${watchList.watchListName}.`,
-          });
-        }
+
+    try {
+      const res = await this.stockService.addStockIntoWatchList(
+        watchListId,
+        stock
+      );
+      if (!res.status) {
+        this.messageService.add({
+          severity: 'error',
+          summary: `Watchlist item add error`,
+          detail: `${res.message}`,
+        });
+        op.toggle(event);
+        return;
       }
+    } catch {
+      this.messageService.add({
+        severity: 'error',
+        summary: `Watchlist item add error`,
+        detail: `Unable to add ${stock.name}. Please try again.`,
+      });
+      op.toggle(event);
+      return;
+    }
+
+    watchList.stocks.push({ symbol: stock.symbol, longName: stock.name });
+    this.syncLiveSymbols();
+    this.messageService.add({
+      severity: 'success',
+      summary: `${watchList.watchListName} updated.`,
+      detail: `${stock.name} added into ${watchList.watchListName}.`,
     });
     op.toggle(event);
   }
@@ -147,16 +238,22 @@ export class Nifty50WatchListComponent implements OnInit {
   getWatchListStocksCount() {
     return this.watchListData[this.activeTabViewIndex]?.stocks?.length ?? 0;
   }
+
   async updatedWatchListName(watchListNewName: string) {
     if (!this.editWatchList || this.editWatchList.watchListName === '') return;
     if (this.editWatchList.watchListName === watchListNewName) {
       this.editWatchList = undefined;
       return;
     }
-    let res = await this.stockService.updateWatchListName(
-      this.editWatchList?._id,
-      watchListNewName
-    );
+    let res;
+    try {
+      res = await this.stockService.updateWatchListName(
+        this.editWatchList?._id,
+        watchListNewName
+      );
+    } catch {
+      res = { status: false, message: 'Unable to rename. Please try again.' };
+    }
     if (!res.status) {
       this.messageService.add({
         severity: 'error',
@@ -185,9 +282,14 @@ export class Nifty50WatchListComponent implements OnInit {
         (watchList) => watchList.watchListName === this.createWatchListName
       );
       if (index === -1) {
-        let res = await this.stockService.createWatchList(
-          this.createWatchListName
-        );
+        let res;
+        try {
+          res = await this.stockService.createWatchList(
+            this.createWatchListName
+          );
+        } catch {
+          res = { status: false, message: 'Unable to create. Please try again.' };
+        }
         if (!res.status) {
           this.messageService.add({
             severity: 'error',
@@ -216,13 +318,20 @@ export class Nifty50WatchListComponent implements OnInit {
     }
     this.createWatchListDialogVisible = false;
   }
+
   cancelNewWatchList() {
     this.createWatchListName = '';
     this.createWatchListDialogVisible = false;
   }
+
   async deleteWatchList() {
     if (!this.editWatchList) return;
-    let res = await this.stockService.deleteWatchList(this.editWatchList._id);
+    let res;
+    try {
+      res = await this.stockService.deleteWatchList(this.editWatchList._id);
+    } catch {
+      res = { status: false };
+    }
     if (!res.status) {
       this.messageService.add({
         severity: 'error',
@@ -234,7 +343,15 @@ export class Nifty50WatchListComponent implements OnInit {
     this.watchListData = this.watchListData.filter(
       (watchList) => watchList._id !== this.editWatchList?._id
     );
+    // The service caches the list; keep it in sync so the deleted list doesn't come back.
+    this.stockService.watchListData = this.watchListData;
     this.editWatchList = undefined;
+    // Keep the open tab valid after removing one.
+    this.activeTabViewIndex = Math.min(
+      this.activeTabViewIndex,
+      Math.max(this.watchListData.length - 1, 0)
+    );
+    this.syncLiveSymbols();
     this.messageService.add({
       severity: 'success',
       summary: `Watchlist deleted`,

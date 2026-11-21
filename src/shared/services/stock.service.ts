@@ -27,7 +27,9 @@ export class StockService {
   ws?: WebSocket;
   isTockensLoaded: boolean = false;
   watchListData: IWatchList[] = [];
-  private symbols: string[] = [];
+  // Live-price subscriptions: Nifty 50 (always) + the stocks of the open watchlist.
+  private baseSymbols = new Set<string>();
+  private watchListSymbols = new Set<string>();
   private intentionalClose: boolean = false;
   private reconnectAttempts: number = 0;
   private reconnectTimer?: ReturnType<typeof setTimeout>;
@@ -72,13 +74,8 @@ export class StockService {
       ws.onopen = () => {
         console.log('WebSocket connected');
         this.reconnectAttempts = 0;
-        ws.send(
-          JSON.stringify({
-            action: 'subscribe',
-            variables: this.symbols,
-            type: 'ltp',
-          })
-        );
+        // (Re)subscribe everything, including watchlist stocks added earlier.
+        this.sendAction('subscribe', this.allSymbols());
       };
 
       ws.onerror = (error) => {
@@ -114,6 +111,64 @@ export class StockService {
       console.error('Error establishing WebSocket connection:', error);
       this.scheduleReconnect();
     }
+  }
+
+  private allSymbols(): string[] {
+    return [...new Set([...this.baseSymbols, ...this.watchListSymbols])];
+  }
+
+  private sendAction(action: 'subscribe' | 'unsubscribe', symbols: string[]) {
+    if (!symbols.length || this.ws?.readyState !== WebSocket.OPEN) return;
+    this.ws.send(JSON.stringify({ action, variables: symbols, type: 'ltp' }));
+  }
+
+  /**
+   * Live prices for the stocks of the open watchlist (any ticker, not only Nifty 50).
+   * Only the difference is sent to the server; Nifty 50 symbols stay subscribed.
+   * If the socket isn't open yet, onopen subscribes the full set.
+   */
+  setWatchListSymbols(symbols: string[]) {
+    const next = new Set(symbols.map((s) => s.toUpperCase()));
+    const before = new Set(this.allSymbols());
+    const added = [...next].filter((s) => !before.has(s));
+    const removed = [...this.watchListSymbols].filter(
+      (s) => !next.has(s) && !this.baseSymbols.has(s)
+    );
+    this.watchListSymbols = next;
+    this.sendAction('subscribe', added);
+    this.sendAction('unsubscribe', removed);
+  }
+
+  /**
+   * Search any ticker through the server (/stocks/search). Results come back in the
+   * same shape as the Nifty 50 list, so the existing list and "+" menu can show them.
+   */
+  async searchStocks(query: string): Promise<IStockData[]> {
+    const res = await firstValueFrom(
+      this.http.get<any>(
+        `${SERVER_URL}/stocks/search?q=${encodeURIComponent(query)}`
+      )
+    );
+    const quotes: any[] = res?.payload?.quotes ?? [];
+    return quotes
+      .filter((q) => q?.symbol && (q.longname || q.shortname))
+      .map((q) => {
+        const price = q.regularMarketPrice ?? 0;
+        return {
+          symbol: q.symbol,
+          name: q.longname || q.shortname,
+          current_price: price,
+          market_cap: q.marketCap ?? 0,
+          // Today's values, so the chart's Open/High/Low/Close panel works for any stock.
+          ohlc: {
+            Open: q.regularMarketOpen ?? 0,
+            High: q.regularMarketDayHigh ?? 0,
+            Low: q.regularMarketDayLow ?? 0,
+            Close: price,
+            Volume: q.regularMarketVolume ?? 0,
+          },
+        };
+      });
   }
 
   private scheduleReconnect() {
@@ -175,7 +230,7 @@ export class StockService {
     if (this.liveData$?.closed || !this.liveData$) {
       this.liveData$ = new ReplaySubject<ITickerData | IClosed>(1);
     }
-    this.symbols = nifty50InstrumentalTokens;
+    this.baseSymbols = new Set(nifty50InstrumentalTokens);
     this.intentionalClose = false;
     this.reconnectAttempts = 0;
     await this.connectWebSocket();
@@ -216,7 +271,10 @@ export class StockService {
     return res;
   }
 
-  async addStockIntoWatchList(watchListId: string, stockItem: IStockData) {
+  async addStockIntoWatchList(
+    watchListId: string,
+    stockItem: { symbol: string; name: string }
+  ) {
     let res = await firstValueFrom(
       this.http.patch<ApiWatchListResponse>(
         `${SERVER_URL}/stocks/add-stock-watchlist`,
