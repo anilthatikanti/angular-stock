@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { Auth, sendPasswordResetEmail } from '@angular/fire/auth';
+import { AuthApiService } from '../../../shared/services/auth-api.service';
 import {
   FormBuilder,
   FormGroup,
@@ -34,7 +34,7 @@ export class ForgotPasswordComponent {
   timerId!: any;
 
   constructor(
-    private firebaseAuth: Auth,
+    private authApi: AuthApiService,
     private toast: ToastService,
     private router: Router
   ) {
@@ -50,8 +50,10 @@ export class ForgotPasswordComponent {
     try {
       this.isEmailNotRegistered = false;
       if (this.forgotPasswordForm.valid) {
-        await sendPasswordResetEmail(
-          this.firebaseAuth,
+        this.isResetPasswordButtonLoading = true;
+        // Backend sends the reset email; it answers the same way whether or not the
+        // email has an account.
+        await this.authApi.forgotPassword(
           this.forgotPasswordForm.controls['email'].value
         );
         this.isMailSent = true;
@@ -68,7 +70,7 @@ export class ForgotPasswordComponent {
       // if (error.code == 'auth/user-not-found') {
       //   this.isEmailNotRegistered = true;
       // } else {
-      firebaseErrorMessages(error.code, this.toast.messageService!);
+      firebaseErrorMessages(error.code, this.toast.messageService!, error.message);
       // }
       console.error('forgotPassword [ERR]: ', error);
     } finally {

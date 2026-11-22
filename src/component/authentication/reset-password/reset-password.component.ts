@@ -9,7 +9,7 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { PasswordModule } from 'primeng/password';
 import { passwordPattern } from '../../../shared/validation/form.validation';
-import { Auth, confirmPasswordReset } from '@angular/fire/auth';
+import { AuthApiService } from '../../../shared/services/auth-api.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastService } from '../../../shared/services/toastService/toast.service';
 import { firebaseErrorMessages } from '../functions/authentication.function';
@@ -28,7 +28,7 @@ export class ResetPaswwordComponent {
   isPasswordResetSuccess: boolean = false;
   isSetNewPasswordButtonLoading: Boolean = false;
   constructor(
-    private firebaseAuth: Auth,
+    private authApi: AuthApiService,
     private activatedRoute: ActivatedRoute,
     private router: Router,
     private toast: ToastService
@@ -74,8 +74,7 @@ export class ResetPaswwordComponent {
       this.isFormSubmitted = true;
       if (this.resetPasswordForm.valid) {
         this.isSetNewPasswordButtonLoading = true;
-        await confirmPasswordReset(
-          this.firebaseAuth,
+        await this.authApi.resetPassword(
           this.oobCode,
           this.formControl['password'].value
         );
@@ -85,9 +84,8 @@ export class ResetPaswwordComponent {
       console.error('resetPassword [ERR]: ', error);
       if (error.code == 'auth/invalid-action-code') {
         this.router.navigate(['/auth/login']);
-      } else if (error.code == 'auth/invalid-action-code') {
       }
-      firebaseErrorMessages(error.code, this.toast.messageService!);
+      firebaseErrorMessages(error.code, this.toast.messageService!, error.message);
     } finally {
       this.isSetNewPasswordButtonLoading = false;
     }

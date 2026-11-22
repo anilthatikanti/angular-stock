@@ -1,10 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import {
+  firebaseErrorMessages,
   logoutUser,
-  sendUserEmailVerificationLink,
 } from '../functions/authentication.function';
-import { applyActionCode, Auth } from '@angular/fire/auth';
+import { Auth } from '@angular/fire/auth';
+import { AuthApiService } from '../../../shared/services/auth-api.service';
 import { ActivatedRoute, Router } from '@angular/router';
 import { WEB_APP_URL } from '../../../environments/environment';
 import { ToastService } from '../../../shared/services/toastService/toast.service';
@@ -35,7 +36,8 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
     private firebaseAuth: Auth,
     private activatedRoute: ActivatedRoute,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private authApi: AuthApiService
   ) {}
 
   ngOnInit(): void {
@@ -106,7 +108,7 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
 
   async applyVerificationCode() {
     try {
-      await applyActionCode(this.firebaseAuth, this.oobCode);
+      await this.authApi.verifyEmail(this.oobCode);
       this.mode = 'emailVerifySuccess';
     } catch (error: any) {
       console.error('verifyEmail: [ERR] ', error);
@@ -126,15 +128,26 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
       window.location.href = `${this.continueUrl}`;
       return;
     }
-    let isEmailSent = await sendUserEmailVerificationLink(
-      window.location.host,
-      this.firebaseAuth,
-      this.toast.messageService!
-    );
-    if (isEmailSent) {
+    try {
+      // The backend asks Firebase to send the email; the link returns to this app.
+      const res = await this.authApi.sendVerificationEmail();
+      if (res.alreadyVerified) {
+        window.location.href = `${this.continueUrl}`;
+        return;
+      }
+      this.toast.messageService?.add({
+        severity: 'success',
+        summary: 'Success',
+        detail: 'Verification email has been sent to your email address',
+      });
       this.startTimer();
-    } else {
-      await logoutUser(this.firebaseAuth);
+    } catch (error: any) {
+      console.error('sendVerificationEmail [ERR]: ', error);
+      firebaseErrorMessages(error.code, this.toast.messageService!, error.message);
+      // Only a broken/expired session means the user has to log in again.
+      if (['auth/invalid-user-token', 'auth/user-token-expired', 'auth/user-not-found'].includes(error.code)) {
+        await logoutUser(this.firebaseAuth);
+      }
     }
   }
 

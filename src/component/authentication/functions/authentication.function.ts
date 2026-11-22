@@ -1,7 +1,6 @@
 import {
   Auth,
   getAuth,
-  sendEmailVerification,
   signOut,
 } from '@angular/fire/auth';
 import { Router } from '@angular/router';
@@ -16,7 +15,8 @@ import { lastValueFrom } from 'rxjs';
  */
 export const firebaseErrorMessages = (
   message: string,
-  messageService: MessageService
+  messageService: MessageService,
+  fallbackDetail?: string // message from the backend, shown for codes not listed below
 ) => {
   messageService.clear();
   switch (message) {
@@ -127,7 +127,7 @@ export const firebaseErrorMessages = (
       messageService.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Something went wrong. Try again later.',
+        detail: fallbackDetail || 'Something went wrong. Try again later.',
       });
   }
 };
@@ -191,44 +191,6 @@ export const logoutUser = async (firebaseAuth: Auth, force: boolean = true) => {
     }
   } catch (error: any) {
     console.error('logoutUser: [ERR]', error.message);
-  }
-};
-
-/**
- * This is will send the verification link in the register email address.
- *
- * @param auth
- * @param messageService
- */
-export const sendUserEmailVerificationLink = async (
-  appUrl: string,
-  auth: Auth,
-  messageService: MessageService
-) => {
-  let actionCodeSettings = {
-    url: environment.production ? `https://${appUrl}` : WEB_APP_URL,
-    handleCodeInApp: true,
-  };
-  try {
-    if (environment.useEmulators) {
-      await sendEmailVerification(auth.currentUser!);
-    } else {
-      await sendEmailVerification(auth.currentUser!, actionCodeSettings);
-    }
-    messageService.add({
-      severity: 'success',
-      summary: 'Success',
-      detail: 'Verification email has been sent to your email address',
-    });
-    return true;
-  } catch (error: any) {
-    console.error('sendUserEmailVerificationLink: [ERR]: ', error.message);
-    messageService.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Failed to send the verification email. Try again later',
-    });
-    return false;
   }
 };
 

@@ -15,13 +15,9 @@ import {
   passwordPattern,
 } from '../../../shared/validation/form.validation';
 import { PasswordModule } from 'primeng/password';
-import {
-  Auth,
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from '@angular/fire/auth';
 import { firebaseErrorMessages } from '../functions/authentication.function';
 import { ToastService } from '../../../shared/services/toastService/toast.service';
+import { AuthApiService } from '../../../shared/services/auth-api.service';
 @Component({
   selector: 'app-signup',
   standalone: true,
@@ -40,7 +36,7 @@ export class SignupComponent implements OnInit {
   signupForm: FormGroup;
   isSignupButtonLoading: boolean = false;
   constructor(
-    private firebaseAuth: Auth,
+    private authApi: AuthApiService,
     private router: Router,
     private toast: ToastService
   ) {
@@ -88,19 +84,14 @@ export class SignupComponent implements OnInit {
     try {
       if (this.signupForm.valid) {
         this.isSignupButtonLoading = true;
-        const userDetails = await createUserWithEmailAndPassword(
-          this.firebaseAuth,
+        // The backend creates the account (with the name) and logs the user in; the
+        // verify-email page then sends the verification email.
+        await this.authApi.signup(
+          this.formControl['fullName'].value,
           this.signupForm.value.email!,
           this.signupForm.value.password!
         );
-        if (userDetails) {
-          await updateProfile(this.firebaseAuth.currentUser!, {
-            displayName: this.formControl['fullName'].value,
-          });
-          this.router.navigate([`/auth/verify-email`]);
-        } else {
-          throw { code: 'signup-failed' };
-        }
+        this.router.navigate([`/auth/verify-email`]);
       } else {
         Object.values(this.signupForm.controls).forEach((control) => {
           if (control.invalid) {
@@ -111,7 +102,7 @@ export class SignupComponent implements OnInit {
       }
     } catch (error: any) {
       console.error('signupSubmit [ERR] ', error);
-      firebaseErrorMessages(error.code, this.toast.messageService!);
+      firebaseErrorMessages(error.code, this.toast.messageService!, error.message);
     } finally {
       this.isSignupButtonLoading = false;
     }

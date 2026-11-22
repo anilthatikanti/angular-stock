@@ -15,13 +15,13 @@ import { PasswordModule } from 'primeng/password';
 import {
   Auth,
   getAuth,
-  signInWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
   OAuthProvider,
 } from '@angular/fire/auth';
 
 import { ToastService } from '../../../shared/services/toastService/toast.service';
+import { AuthApiService } from '../../../shared/services/auth-api.service';
 import { firebaseErrorMessages } from '../functions/authentication.function';
 import { NgOptimizedImage } from '@angular/common';
 import { Meta, Title } from '@angular/platform-browser';
@@ -50,7 +50,8 @@ export class LoginComponent implements OnInit {
     private toast: ToastService,
     private router: Router,
     private title: Title,
-    private meta: Meta
+    private meta: Meta,
+    private authApi: AuthApiService
   ) {
     let formBuilder: FormBuilder = new FormBuilder();
     this.loginForm = formBuilder.group({
@@ -81,8 +82,8 @@ export class LoginComponent implements OnInit {
   async loginSubmit() {
     try {
       if (this.loginForm.valid) {
-        await signInWithEmailAndPassword(
-          this.firebaseAuth,
+        // Password is checked by the backend (/auth/login), not in the browser.
+        await this.authApi.login(
           this.loginForm.value.email,
           this.loginForm.value.password
         );
@@ -104,7 +105,7 @@ export class LoginComponent implements OnInit {
       }
     } catch (error: any) {
       console.error('onClickLogin [ERR]: ', error);
-      firebaseErrorMessages(error.code, this.toast.messageService!);
+      firebaseErrorMessages(error.code, this.toast.messageService!, error.message);
     }
   }
 
