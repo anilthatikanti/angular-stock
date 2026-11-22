@@ -171,6 +171,10 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     return { height, width };
   }
 
+  isDown(symbol: string): boolean {
+    return (this.liveDataMap[symbol]?.change ?? 0) < 0;
+  }
+
   getFormattedChange(symbol: string): string {
     const data = this.liveDataMap[symbol];
     if (!data) return '0.00 (0.00%)';

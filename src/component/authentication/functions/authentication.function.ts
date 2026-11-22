@@ -68,7 +68,7 @@ export const firebaseErrorMessages = (
         severity: 'error',
         summary: 'Error',
         detail:
-          'Your request to verify your email has expired or the link has already been used',
+          'This link has expired or has already been used. Please request a new one.',
       });
       break;
     case 'auth/invalid-email':

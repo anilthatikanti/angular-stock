@@ -24,7 +24,7 @@
           [style]="{ 'background-color': '#E6EEF5' }"
         >
           <h5 class="text-lg font-medium">
-            {{ selectedStock?.name }}
+            {{ selectedStock.name }}
           </h5>
           <div class="flex align-items-center gap-2">
             <div class="flex align-items-center gap-2">
@@ -64,7 +64,7 @@
             <p
               [ngStyle]="{
                 color:
-                  (liveDataMap[selectedStock.symbol]?.change || 0) < 0
+                  isDown(selectedStock.symbol)
                     ? 'tomato'
                     : 'green'
               }"
