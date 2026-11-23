@@ -1,24 +1,24 @@
 <div class="app-shell flex flex-column">
-  <div
-    class="h-3rem w-full bg-white pl-4 pr-3 nav-shadow flex justify-content-between align-items-center"
-  >
+  <header class="app-header">
     <img
-      class="lg:hidden xl:hidden 2xl:hidden inline"
-      height="35"
-      width="35"
+      class="app-logo-icon lg:hidden"
+      height="32"
+      width="32"
       src="assets/images/logos/stocx-icon.svg"
       alt="STOCX"
     />
     <img
-      height="40"
-      class="lg:inline xl:inline 2xl:inline hidden"
-      width="100"
+      class="app-logo-full hidden lg:block"
+      height="36"
+      width="90"
       src="assets/images/logos/stocx-logo.svg"
       alt="STOCX"
     />
-    <div class="flex align-items-center gap-3">
+    <div class="app-header-actions">
       <!-- notification -->
-      <i class="pi pi-bell"></i>
+      <span class="app-header-icon" aria-label="Notifications">
+        <i class="pi pi-bell"></i>
+      </span>
       <!-- user avatar -->
       <p-button
         (onClick)="op.toggle($event)"
@@ -29,7 +29,7 @@
         <p-avatar [label]="getUserAvatarName('avatar')" shape="circle" />
       </p-button>
     </div>
-  </div>
+  </header>
 
   <div class="flex-grow-1 min-h-0">
     <div class="flex h-full">

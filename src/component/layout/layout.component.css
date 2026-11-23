@@ -53,3 +53,59 @@
   color: var(--primary-color, #3b82f6);
   font-weight: 600;
 }
+
+/* ---- Top bar: fixed px sizes so it doesn't shrink with the phone's smaller base font ---- */
+.app-header {
+  height: 56px;
+  flex-shrink: 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border-bottom: 1px solid #e6e9ed;
+}
+.app-header img {
+  display: block;
+}
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.app-header-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #475569;
+}
+.app-header-icon .pi {
+  font-size: 18px;
+  line-height: 1;
+}
+.app-header ::ng-deep .p-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  .app-header {
+    height: 60px;
+    padding: 0 24px;
+  }
+}
+.app-header ::ng-deep .p-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.app-header ::ng-deep p-avatar {
+  display: flex; /* inline avatars sit on the text baseline, 2px off centre */
+}
