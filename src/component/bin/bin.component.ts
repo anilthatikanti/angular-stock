@@ -205,8 +205,8 @@ export class BinComponent implements OnInit {
         this.tableData = [];
         this.toast.messageService?.add({
           severity: 'success',
-          summary: 'Folder Restore Success',
-          detail: 'The folder has been successfully restored.',
+          summary: 'Bin emptied',
+          detail: 'All items have been permanently deleted.',
         });
       }
     } catch (error) {
@@ -263,8 +263,8 @@ export class BinComponent implements OnInit {
         this.tableData = this.tableData.filter((item) => item._id !== file._id);
         this.toast.messageService?.add({
           severity: 'success',
-          summary: 'File Restore Success',
-          detail: 'The file has been successfully restored.',
+          summary: 'All restored',
+          detail: 'All items have been restored.',
         });
       }
     } catch (e) {

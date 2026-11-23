@@ -12,7 +12,6 @@ import { Title } from '@angular/platform-browser';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, ToastModule],
-  providers: [MessageService],
   template: `<p-toast /> <router-outlet></router-outlet>`,
 })
 export class AppComponent implements AfterViewInit {

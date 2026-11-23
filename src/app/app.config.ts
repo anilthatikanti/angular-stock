@@ -2,6 +2,7 @@ import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from '../app/app.routes';
+import { MessageService } from 'primeng/api';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
@@ -13,6 +14,9 @@ import { authInterceptor } from '../shared/interceptors/auth.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    // One MessageService for the whole app, shown by the single <p-toast> in AppComponent.
+    // (Extra <p-toast>s or component-level MessageServices make every toast appear twice.)
+    MessageService,
     provideRouter(routes),
     // (provideClientHydration removed: the app has no server-side rendering, so it only
     // produced the NG0505 warning on every load.)

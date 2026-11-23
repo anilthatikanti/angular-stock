@@ -56,7 +56,7 @@ import { Meta, Title } from '@angular/platform-browser';
     CommonModule,
     NgOptimizedImage
   ],
-  providers: [ConfirmationService, MessageService],
+  providers: [ConfirmationService],
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.css',
 })
@@ -247,13 +247,14 @@ export class LayoutComponent implements OnInit {
     }
   }
 
-  userLogoutEvent() {
-    this.onClickBackToLogin();
+  async userLogoutEvent() {
+    await logoutUser(this.firebaseAuth, false);
     this.messageService.add({
       severity: 'success',
-      summary: 'Logout success',
-      detail: 'Logout user',
+      summary: 'Logged out',
+      detail: 'You have been logged out.',
     });
+    this.router.navigate(['/auth/login']);
   }
   getUserAvatarName(type?: string) {
     if (type === 'avatar') {
