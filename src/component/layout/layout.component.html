@@ -1,4 +1,4 @@
-<div class="h-screen flex flex-column">
+<div class="app-shell flex flex-column">
   <div
     class="h-3rem w-full bg-white pl-4 pr-3 nav-shadow flex justify-content-between align-items-center"
   >
@@ -29,11 +29,11 @@
     </div>
   </div>
 
-  <div class="flex-grow-1">
+  <div class="flex-grow-1 min-h-0">
     <div class="flex h-full">
       <div
         style="width: 96px"
-        class="lg:w-18rem xl:w-18rem 2xl:w-18rem sidebar-shadow flex flex-column align-items-center h-full p-3"
+        class="lg:w-18rem xl:w-18rem 2xl:w-18rem sidebar-shadow hidden md:flex flex-column align-items-center h-full p-3"
       >
         <p-menu [model]="items" class="w-full">
           <ng-template pTemplate="item" let-item>
@@ -55,11 +55,35 @@
         </p-menu>
       </div>
 
-      <div class="w-full p-3" style="background-color: #f7f7f7">
+      <div class="w-full p-2 md:p-3 overflow-auto" style="background-color: #f7f7f7">
         <router-outlet></router-outlet>
       </div>
     </div>
   </div>
+
+  <!-- Phone bottom bar (hidden from 768px up, where the sidebar is shown) -->
+  <nav class="mobile-bottom-bar md:hidden" aria-label="Main">
+    @for (item of items; track item.label) {
+    <a
+      class="mobile-tab"
+      [class.active]="isMobileTabActive(item.routerLink)"
+      [routerLink]="item.routerLink"
+      (click)="onMobileNav()"
+    >
+      <i [class]="item.icon"></i>
+      <span>{{ item.label }}</span>
+    </a>
+    }
+    <button
+      type="button"
+      class="mobile-tab"
+      [class.active]="mobileNav.watchlistOpen()"
+      (click)="onMobileWatchlist()"
+    >
+      <i class="pi pi-list"></i>
+      <span>Watchlist</span>
+    </button>
+  </nav>
 </div>
 
 <!-- User overlay panel -->

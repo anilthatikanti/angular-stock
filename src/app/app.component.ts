@@ -12,7 +12,8 @@ import { Title } from '@angular/platform-browser';
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet, ToastModule],
-  template: `<p-toast /> <router-outlet></router-outlet>`,
+  // On phones the toast spans the screen width instead of a fixed 25rem box.
+  template: `<p-toast [breakpoints]="{ '767px': { width: 'calc(100% - 1rem)', right: '0.5rem', left: '0.5rem' } }" /> <router-outlet></router-outlet>`,
 })
 export class AppComponent implements AfterViewInit {
   constructor(

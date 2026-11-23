@@ -6,7 +6,7 @@
       border: ' solid 1px #e6e9ed',
       'box-shadow': 'unset'
     }"
-    class="w-full"
+    class="w-full wl-card"
   >
     <ng-template pTemplate="header">
       <div class="h-full">
@@ -23,7 +23,7 @@
     </ng-template>
     <ng-template pTemplate="content">
       <div
-        class="p-3 mt-3 text-xs"
+        class="wl-list p-3 mt-3 text-xs"
         [style]="{ height: 'calc(50vh - 8rem)', 'overflow-y': 'auto' }"
       >
         @for (item of nifty50; track $index) { @if($index){
@@ -138,7 +138,7 @@
       border: ' solid 1px #e6e9ed',
       'box-shadow': 'unset'
     }"
-    class="w-full"
+    class="w-full wl-card"
   >
     <ng-template pTemplate="header">
       <div class="h-full">
@@ -166,6 +166,7 @@
     </ng-template>
     <ng-template pTemplate="subHeader">
       <p-tabView
+        class="wl-tabs"
         [style]="{ padding: '0px', 'font-size': '12px', height: 1200 - 636 + 'px', 'overflow-y': 'auto','min-height': '230px',  }"
         (activeIndexChange)="this.activeTabViewIndex = $event"
         [activeIndex]="activeTabViewIndex"

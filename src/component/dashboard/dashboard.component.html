@@ -20,11 +20,11 @@
 
   <!-- Dashboard Content -->
   <div class="h-full flex flex-column gap-2">
-    <h3 class="text-primary m-0 font-medium">Welcome to Finance Books!</h3>
-    <div class="flex w-full h-full gap-2">
-      <app-tv-chart class="h-full w-full" [selectedStock]="selectedStock" [isParentLoading]="isLoading" [liveDataMap]="liveDataMap" [chartData]="chartData">  </app-tv-chart>
-      <div class="flex flex-column w-3 h-full gap-2">
-       <app-nifty50-watch-list [liveDataMap]="liveDataMap" [nifty50]="nifty50" (selectingStockEvent)="selectedStock = $event">   </app-nifty50-watch-list>
+    <h3 class="dash-title text-primary m-0 font-medium">Welcome to Finance Books!</h3>
+    <div class="flex w-full h-full gap-2 min-h-0">
+      <app-tv-chart class="dash-chart h-full w-full" [class.mobile-hidden]="mobileNav.watchlistOpen()" [selectedStock]="selectedStock" [isParentLoading]="isLoading" [liveDataMap]="liveDataMap" [chartData]="chartData">  </app-tv-chart>
+      <div class="dash-watchlist flex flex-column h-full gap-2" [class.mobile-open]="mobileNav.watchlistOpen()">
+       <app-nifty50-watch-list [liveDataMap]="liveDataMap" [nifty50]="nifty50" (selectingStockEvent)="onSelectStock($event)">   </app-nifty50-watch-list>
       </div>
     </div>
   </div>

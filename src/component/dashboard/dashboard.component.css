@@ -52,3 +52,29 @@
 
 
 
+
+.dash-watchlist {
+  width: 25%;
+  flex-shrink: 0;
+}
+
+/* Phones: show either the chart or the watchlist panel (toggled from the bottom bar). */
+@media (max-width: 767px) {
+  .dash-title {
+    font-size: 1rem;
+  }
+  .dash-watchlist {
+    display: none !important;
+    width: 100%;
+  }
+  .dash-watchlist.mobile-open {
+    display: flex !important;
+  }
+  .dash-chart.mobile-hidden {
+    display: none !important;
+  }
+  .chart-loader {
+    left: 50%;
+    width: 85%;
+  }
+}

@@ -166,7 +166,8 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     const vw = parseFloat(
       getComputedStyle(this.chartContainerRef?.nativeElement).width
     );
-    const height = vh;
+    // Phones: leave room for the bottom bar and the header, which wraps to two lines.
+    const height = window.innerWidth < 768 ? vh - 100 : vh;
     const width = vw; // tweak as per sidebar/padding
     return { height, width };
   }

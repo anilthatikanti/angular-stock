@@ -1,0 +1,18 @@
+
+/* Phones: the panel fills the screen between the top bar and the bottom bar,
+   so the two cards share that height instead of the desktop 50vh split. */
+@media (max-width: 767px) {
+  :host ::ng-deep .wl-card {
+    display: block;
+  }
+  :host ::ng-deep .wl-card > .p-card {
+    height: calc(50dvh - 5.2rem) !important;
+  }
+  :host ::ng-deep .wl-list {
+    height: calc(50dvh - 9.4rem) !important;
+  }
+  :host ::ng-deep .wl-tabs .p-tabview {
+    height: calc(50dvh - 8.6rem) !important;
+    min-height: 0 !important;
+  }
+}

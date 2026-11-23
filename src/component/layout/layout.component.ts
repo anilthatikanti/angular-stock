@@ -4,7 +4,8 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
-import { Router, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { MobileNavService } from '../../shared/services/mobile-nav.service';
 import { DividerModule } from 'primeng/divider';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ToastModule } from 'primeng/toast';
@@ -47,6 +48,7 @@ import { Meta, Title } from '@angular/platform-browser';
     ButtonModule,
     MenuModule,
     RouterOutlet,
+    RouterLink,
     DividerModule,
     ConfirmPopupModule,
     ToastModule,
@@ -97,7 +99,8 @@ export class LayoutComponent implements OnInit {
     private messageService: MessageService,
     private firebaseAuth: Auth,
     private toast: ToastService,
-    private router: Router,private meta: Meta, private title: Title
+    private router: Router,private meta: Meta, private title: Title,
+    public mobileNav: MobileNavService
   ) {
     
     let formBuilder: FormBuilder = new FormBuilder();
@@ -267,6 +270,28 @@ export class LayoutComponent implements OnInit {
   }
   onClickBackToLogin() {
     logoutUser(this.firebaseAuth, false);
+  }
+
+  // ---- phone bottom bar ----
+  onMobileNav() {
+    this.mobileNav.closeWatchlist();
+  }
+
+  // Watchlist button: opens the search + watchlists panel on the dashboard
+  // (tapping it again while open goes back to the chart).
+  onMobileWatchlist() {
+    const onDashboard = this.router.url.startsWith('/dashboard');
+    if (onDashboard && this.mobileNav.watchlistOpen()) {
+      this.mobileNav.closeWatchlist();
+      return;
+    }
+    this.mobileNav.openWatchlist();
+    if (!onDashboard) this.router.navigate(['/dashboard']);
+  }
+
+  isMobileTabActive(routerLink: string): boolean {
+    if (this.mobileNav.watchlistOpen() && routerLink === '/dashboard') return false;
+    return this.isLinkActive(routerLink);
   }
 
   isLinkActive(routerLink: string): boolean {
