@@ -294,6 +294,8 @@
   [header]="image?.file?.fileName"
   [modal]="true"
   [visible]="!!image?._id"
+  [closable]="false"
+  (onHide)="image = ''"
   [style]="{ width: 'fit-content', height: 'fit-content' }"
 >
   @if(image){
