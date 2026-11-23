@@ -4,6 +4,9 @@ import { Folder } from '../../shared/interface/folder-file/folder.interface';
 import { CommonModule, DatePipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
+import { Menu, MenuModule } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
+import { LongPressDirective } from '../../shared/directives/long-press.directive';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { MoveFolderFileComponent } from '../move-folder-file/move-folder-file.component';
 import { FileUploadModule } from 'primeng/fileupload';
@@ -46,6 +49,8 @@ import { Meta, Title } from '@angular/platform-browser';
     MoveFolderFileComponent,
     FileUploadModule,
     ProgressSpinnerModule,
+    MenuModule,
+    LongPressDirective,
   ],
   templateUrl: './bin.component.html',
   styleUrl: './bin.component.css',
@@ -316,6 +321,29 @@ export class BinComponent implements OnInit {
       queryParams: { ...query },
       queryParamsHandling: 'merge',
     });
+  }
+
+  // Press-and-hold a row: show its actions in a popup menu.
+  rowMenuItems: MenuItem[] = [];
+
+  openRowMenu(menu: Menu, row: any, target: HTMLElement) {
+    const name = row?.file ? row.file.fileName : row?.name;
+    this.rowMenuItems = [
+      { label: name, disabled: true, styleClass: 'row-menu-title' },
+      { separator: true },
+      {
+        label: 'Restore',
+        icon: 'pi pi-undo',
+        command: () => (row?.file ? this.restoreFileFn(row) : this.restoreFolderFn(row)),
+      },
+      {
+        label: 'Delete forever',
+        icon: 'pi pi-trash',
+        styleClass: 'row-menu-danger',
+        command: () => (row?.file ? this.deleteFileFn(row) : this.deleteFolderFn(row)),
+      },
+    ];
+    menu.show({ currentTarget: target });
   }
 
   formatBytes(bytes: number): string {

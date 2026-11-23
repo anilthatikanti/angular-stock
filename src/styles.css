@@ -102,3 +102,30 @@ p {
     justify-content: center;
   }
 }
+
+/* ---------- Press-and-hold row menu (Storage / Bin) ---------- */
+.long-press {
+  -webkit-touch-callout: none; /* no iOS copy/share bubble on hold */
+  user-select: none;
+}
+.row-menu {
+  min-width: 11rem;
+}
+.row-menu .row-menu-title {
+  max-width: 16rem;
+}
+.row-menu .row-menu-title .p-menuitem-text {
+  font-weight: 600;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.row-menu .p-menuitem.p-disabled.row-menu-title,
+.row-menu .row-menu-title.p-disabled {
+  opacity: 1;
+}
+.row-menu .row-menu-danger .p-menuitem-text,
+.row-menu .row-menu-danger .p-menuitem-icon {
+  color: #ef4444;
+}

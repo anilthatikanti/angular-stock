@@ -26,6 +26,9 @@ import { Folder } from '../../shared/interface/folder-file/folder.interface';
 import { AsyncPipe, CommonModule, DatePipe } from '@angular/common';
 import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
+import { Menu, MenuModule } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
+import { LongPressDirective } from '../../shared/directives/long-press.directive';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { MoveFolderFileComponent } from '../move-folder-file/move-folder-file.component';
 import {
@@ -59,6 +62,8 @@ import { Meta, Title } from '@angular/platform-browser';
     MoveFolderFileComponent,
     FileUploadModule,
     ProgressSpinnerModule,
+    MenuModule,
+    LongPressDirective,
   ],
   templateUrl: './storage.component.html',
   styleUrl: './storage.component.css',
@@ -173,7 +178,7 @@ export class StorageComponent implements OnInit {
     if (file.size < 1024 * 1024) {
       try {
         this.uploadFileBtnLoading = true;
-        // Manually send file to the backend
+        // Manually send file to the backend
         const formData = new FormData();
         formData.append('folderId', this.currentFolder._id);
         formData.append('file', file);
@@ -464,6 +469,27 @@ export class StorageComponent implements OnInit {
   selectSearchFromFn() {
     if (this.searchValue?.trim())
       this.appendQuery({ global: this.GlobalSearch });
+  }
+
+  // Press-and-hold a row: show its actions in a popup menu.
+  rowMenuItems: MenuItem[] = [];
+
+  openRowMenu(menu: Menu, row: any, target: HTMLElement) {
+    const name = row?.file ? row.file.fileName : row?.name;
+    this.rowMenuItems = [
+      { label: name, disabled: true, styleClass: 'row-menu-title' },
+      { separator: true },
+      { label: 'Rename', icon: 'pi pi-pencil', command: () => this.openEditModelFn(row) },
+      { label: 'Copy', icon: 'pi pi-copy', command: () => this.copy(row) },
+      { label: 'Move', icon: 'pi pi-file-import', command: () => (this.moveItem = row) },
+      {
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        styleClass: 'row-menu-danger',
+        command: () => (row?.file ? this.deleteFileFn(row) : this.deleteFolderFn(row)),
+      },
+    ];
+    menu.show({ currentTarget: target });
   }
 
   formatBytes(bytes: number): string {

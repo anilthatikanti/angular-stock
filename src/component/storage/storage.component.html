@@ -80,11 +80,11 @@
           <th>Create</th>
           <th class="hide-sm">Update</th>
           <th>Size</th>
-          <th>Actions</th>
+          <th class="hide-sm">Actions</th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-rowData>
-        <tr>
+        <tr appLongPress (longPress)="openRowMenu(rowMenu, rowData, $event.target)">
           <td>
             <i
               [class]="rowData?.file ? 'pi pi-file' : 'pi pi-folder'"
@@ -115,7 +115,7 @@
                 : (rowData.count ?? 0) + " Items"
             }}
           </td>
-          <td>
+          <td class="hide-sm">
             <div class="flex gap-3 align-items-center">
               <i
                 pTooltip="Edit"
@@ -156,6 +156,8 @@
         </tr>
       </ng-template>
     </p-table>
+    <!-- Press and hold a row: its actions (the Actions column is hidden on phones) -->
+    <p-menu #rowMenu [model]="rowMenuItems" [popup]="true" appendTo="body" styleClass="row-menu" />
     }@else {
     <div class="w-full h-full flex justify-content-center align-items-center">
       <div class="text-center flex flex-column gap-2">
