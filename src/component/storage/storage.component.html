@@ -1,16 +1,25 @@
 
 @defer (when !tableLoading) {
 <div class="h-full flex flex-column gap-3">
-  <div class="flex gap-2 align-items-center">
-    @if(currentFolder.parentFolderId){
-
-    <i
-      (click)="BackToParent(currentFolder)"
-      class="pi pi-arrow-left text-primary m-0 font-medium"
-      style="font-size: 15px; cursor: pointer"
-    ></i>
-    }
-    <h3 class="text-primary m-0 font-medium">{{ currentFolder.name }}</h3>
+  <div class="page-header">
+    <h2 class="page-title">Storage</h2>
+    <div class="page-subtitle">
+      @if(currentFolder.parentFolderId){
+      <button
+        type="button"
+        class="page-back"
+        aria-label="Back to parent folder"
+        (click)="BackToParent(currentFolder)"
+      >
+        <i class="pi pi-arrow-left"></i>
+      </button>
+      <i class="pi pi-folder"></i>
+      <span class="page-subtitle-text">{{ currentFolder.name }}</span>
+      } @else {
+      <i class="pi pi-home"></i>
+      <span class="page-subtitle-text">My files</span>
+      }
+    </div>
   </div>
 
   @if(tableData.length > 0||searchValue){
