@@ -91,8 +91,8 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     this.innerHeight = window.innerHeight;
     this.innerWidth = window.innerWidth;
     if (this.chart) {
-      const { height, width } = this.getResponsiveChartSize(8);
-      this.chart.resize(width, height - 275);
+      const { height, width } = this.getResponsiveChartSize();
+      this.chart.resize(width, height);
     }
   }
   // Yahoo only serves intraday data for a limited look-back window (in days).
@@ -161,14 +161,12 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     // Initialize chart after view is ready
     setTimeout(() => this.initializeChart(), 0);
   }
-  getResponsiveChartSize(rem: number = 8) {
-    const vh = window.innerHeight;
-    const vw = parseFloat(
-      getComputedStyle(this.chartContainerRef?.nativeElement).width
-    );
-    // Phones: leave room for the bottom bar and the header, which wraps to two lines.
-    const height = window.innerWidth < 768 ? vh - 100 : vh;
-    const width = vw; // tweak as per sidebar/padding
+  // The chart fills its container, which the card's flex layout sizes to whatever space
+  // is left under the header (any screen size, header on one line or two).
+  getResponsiveChartSize() {
+    const rect = (this.chartContainerRef?.nativeElement as HTMLElement).getBoundingClientRect();
+    const width = Math.floor(rect.width);
+    const height = Math.max(Math.floor(rect.height), 200);
     return { height, width };
   }
 
@@ -239,12 +237,11 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           reject(new Error('Chart container not found'));
           return;
         }
-        const { height, width } = this.getResponsiveChartSize(8);
+        const { height, width } = this.getResponsiveChartSize();
 
         const chartOptions = {
-          // width:this.innerWidth - 610,height: this.innerHeight - 278,
           width: width,
-          height: height - 275,
+          height: height,
           layout: {
             textColor: 'black',
             background: { color: 'white' },
@@ -306,13 +303,15 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           chartOptions
         );
 
-        // Follow the container's width. It changes after the chart is created (loader,
-        // Nifty list, scrollbars) without a window resize; a stale width made the chart
-        // wider than its card and the price scale overflowed.
+        // Follow the container's size. It changes after the chart is created (loader,
+        // Nifty list, header wrapping, phone bottom bar, rotation) without a window
+        // resize; a stale size made the chart overflow its card.
         const container = this.chartContainerRef.nativeElement as HTMLElement;
         this.resizeObserver = new ResizeObserver(() => {
-          const width = Math.floor(container.getBoundingClientRect().width);
-          if (width > 0 && this.chart) this.chart.applyOptions({ width });
+          const rect = container.getBoundingClientRect();
+          const width = Math.floor(rect.width);
+          const height = Math.floor(rect.height);
+          if (width > 0 && height > 0 && this.chart) this.chart.applyOptions({ width, height });
         });
         this.resizeObserver.observe(container);
         this.ChartAreaSeries = this.chart.addAreaSeries({

@@ -22,18 +22,42 @@
   font-size: 0.875rem;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .chart-container {
-    min-height: 300px;
-  }
+/* The card is a column: header (name, dropdowns, price, OHLC) takes its natural height
+   and the body/chart area gets the rest, so the chart adapts to any screen. */
+:host ::ng-deep .chart-card > .p-card {
+  display: flex;
+  flex-direction: column;
+  /* Very short screens (phone turned sideways): keep a usable chart and let the
+     page scroll, instead of squeezing the chart to a sliver or cutting it off. */
+  min-height: 26rem;
+}
+:host ::ng-deep .chart-card .p-card-body,
+:host ::ng-deep .chart-card .p-card-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-wrapper {
   position: relative;
   width: 100%;
-  min-height: 400px;
+  flex: 1 1 auto;
+  min-height: 220px;
   background-color: #ffffff;
+}
+
+/* Phones: compact header so more of the screen goes to the chart. */
+@media (max-width: 767px) {
+  .ohlc p {
+    font-size: 0.75rem;
+  }
+  .chart-stats p {
+    font-size: 0.8rem;
+  }
+  .chart-loader {
+    left: 50%;
+  }
 }
 
 #chart-container {

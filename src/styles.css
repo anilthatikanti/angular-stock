@@ -56,3 +56,49 @@ p {
 .p-button-label {
   font-weight: 500;
 }
+
+/* ---------- Phones (under 768px) ---------- */
+@media (max-width: 767px) {
+  /* Smaller base size: PrimeNG and PrimeFlex sizes are in rem, so everything scales. */
+  html {
+    font-size: 13px;
+  }
+  h3 {
+    font-size: 1.1rem;
+  }
+
+  /* Tables: tighter rows and smaller text; scroll sideways if still too wide. */
+  .p-datatable .p-datatable-wrapper {
+    overflow-x: auto;
+  }
+  .p-datatable .p-datatable-thead > tr > th,
+  .p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.5rem 0.4rem;
+    font-size: 0.875rem;
+  }
+  .p-datatable .p-datatable-tbody > tr > td .p-button.p-button-icon-only {
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+  }
+  .hide-sm {
+    display: none !important;
+  }
+
+  /* Storage / Bin toolbars: search on its own row, buttons below sharing the width. */
+  .toolbar > input,
+  .toolbar-search {
+    width: 100%;
+  }
+  .toolbar-actions {
+    width: 100%;
+  }
+  .toolbar-actions > * {
+    flex: 1 1 0;
+  }
+  .toolbar-actions .p-button,
+  .toolbar-actions .p-fileupload-choose {
+    width: 100%;
+    justify-content: center;
+  }
+}
