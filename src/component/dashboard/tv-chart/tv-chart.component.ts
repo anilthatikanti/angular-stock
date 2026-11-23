@@ -180,14 +180,11 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
   }
 
   // The right price column is as wide as its widest label (the library has no max width).
-  // On phones the labels are compact so the column fits its content at ~36-38px:
-  // 2850 (>= 1000), 950.5 (>= 100), 12.35 (< 100). Desktop keeps 2 decimals.
+  // On phones the labels are compact (always at least one decimal) so the column fits its
+  // content: 2850.5 / 950.5 (>= 100), 12.35 (< 100). Desktop keeps 2 decimals.
   private priceFormatter(): (price: number) => string {
     if (!this.isPhone()) return (p: number) => p.toFixed(2);
-    return (p: number) => {
-      const abs = Math.abs(p);
-      return p.toFixed(abs >= 1000 ? 0 : abs >= 100 ? 1 : 2);
-    };
+    return (p: number) => p.toFixed(Math.abs(p) >= 100 ? 1 : 2);
   }
 
   // Options that change between phone and desktop (applied at start and on resize).
