@@ -44,6 +44,7 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
 
   passwordRemember: boolean = true;
+  isLoginLoading: boolean = false;
 
   constructor(
     private firebaseAuth: Auth,
@@ -80,8 +81,10 @@ export class LoginComponent implements OnInit {
   }
 
   async loginSubmit() {
+    if (this.isLoginLoading) return; // ignore repeat clicks while signing in
     try {
       if (this.loginForm.valid) {
+        this.isLoginLoading = true;
         // Password is checked by the backend (/auth/login), not in the browser.
         await this.authApi.login(
           this.loginForm.value.email,
@@ -106,6 +109,8 @@ export class LoginComponent implements OnInit {
     } catch (error: any) {
       console.error('onClickLogin [ERR]: ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!, error.message);
+    } finally {
+      this.isLoginLoading = false;
     }
   }
 

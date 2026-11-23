@@ -70,6 +70,7 @@ export class ResetPaswwordComponent {
   }
 
   async resetPassword() {
+    if (this.isSetNewPasswordButtonLoading) return; // ignore repeat clicks
     try {
       this.isFormSubmitted = true;
       if (this.resetPasswordForm.valid) {

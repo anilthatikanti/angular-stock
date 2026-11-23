@@ -78,6 +78,8 @@
             [style]="{ width: '100%', padding: '7px',  }"
             size="small"
             label="Sign in"
+            [loading]="isLoginLoading"
+            [disabled]="isLoginLoading"
           />
           <div
             class="w-full flex justify-content-center align-items-center gap-1"

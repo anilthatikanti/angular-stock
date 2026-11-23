@@ -141,6 +141,8 @@
             [style]="{ width: '100%', padding: '7px', }"
             size="small"
             label="Sign up"
+            [loading]="isSignupButtonLoading"
+            [disabled]="isSignupButtonLoading"
           />
           <div
             class="w-full flex justify-content-center align-items-center gap-1"

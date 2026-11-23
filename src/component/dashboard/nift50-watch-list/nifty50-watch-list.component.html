@@ -60,7 +60,10 @@
                     <!-- @if(!watchList.stocks.includes(item)){ -->
 
                     <i
-                      class="pi pi-plus-circle cursor-pointer text-primary"
+                      class="pi cursor-pointer text-primary"
+                      [class.pi-plus-circle]="busyAction !== 'add:' + watchList._id + ':' + item.symbol"
+                      [class.pi-spin]="busyAction === 'add:' + watchList._id + ':' + item.symbol"
+                      [class.pi-spinner]="busyAction === 'add:' + watchList._id + ':' + item.symbol"
                       (click)="updateWatchList(op, $event, item, watchList._id)"
                     ></i>
                     <!-- }@else {
@@ -180,7 +183,10 @@
           <div class="flex justify-content-between">
             <div class="flex align-items-center gap-2">
               <i
-                class="pi pi-trash cursor-pointer"
+                class="pi cursor-pointer"
+                [class.pi-trash]="busyAction !== 'del:' + watchList._id + ':' + stock.symbol"
+                [class.pi-spin]="busyAction === 'del:' + watchList._id + ':' + stock.symbol"
+                [class.pi-spinner]="busyAction === 'del:' + watchList._id + ':' + stock.symbol"
                 [style]="{ 'font-size': '14px', color: 'tomato' }"
                 (click)="deleteWatchListItem(watchList, stock)"
               ></i>
@@ -255,12 +261,15 @@
               label="Delete"
               size="small"
               severity="danger"
+              [loading]="busyAction === 'deleteList'"
+              [disabled]="!!busyAction"
               (onClick)="deleteWatchList()"
             />
             <p-button
               label="Save"
               size="small"
-              [disabled]="!editWatchListName.value.length"
+              [loading]="busyAction === 'rename'"
+              [disabled]="!editWatchListName.value.length || !!busyAction"
               (onClick)="updatedWatchListName(editWatchListName.value)"
             />
           </div>
@@ -298,7 +307,8 @@
     <p-button
       label="Save"
       size="small"
-      [disabled]="!createWatchListName.length"
+      [loading]="busyAction === 'create'"
+      [disabled]="!createWatchListName.length || !!busyAction"
       (onClick)="createWatchList()"
     />
   </div>

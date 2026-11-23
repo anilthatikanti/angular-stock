@@ -24,6 +24,7 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
   apiKey: string = '';
   continueUrl: string = '';
   isVerifyEmailSend: Boolean = false;
+  isResendLoading: boolean = false;
 
   isResendButtonDisabled: boolean = true;
   timer: number = 60;
@@ -124,10 +125,12 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
   }
 
   async onClickResendVerificationLink() {
+    if (this.isResendLoading) return; // ignore repeat clicks
     if (this.firebaseAuth.currentUser?.emailVerified) {
       window.location.href = `${this.continueUrl}`;
       return;
     }
+    this.isResendLoading = true;
     try {
       // The backend asks Firebase to send the email; the link returns to this app.
       const res = await this.authApi.sendVerificationEmail();
@@ -148,6 +151,8 @@ export class VerifyEmailComponent implements OnInit, OnDestroy {
       if (['auth/invalid-user-token', 'auth/user-token-expired', 'auth/user-not-found'].includes(error.code)) {
         await logoutUser(this.firebaseAuth);
       }
+    } finally {
+      this.isResendLoading = false;
     }
   }
 

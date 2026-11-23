@@ -204,7 +204,12 @@
         severity="secondary"
         (onClick)="changePassword = false"
       />
-      <p-button label="Save" type="submit" />
+      <p-button
+        label="Save"
+        type="submit"
+        [loading]="isPasswordSaving"
+        [disabled]="isPasswordSaving"
+      />
     </div>
   </form>
 </p-dialog>

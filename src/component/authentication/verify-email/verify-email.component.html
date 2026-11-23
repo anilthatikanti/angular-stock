@@ -15,7 +15,8 @@
     <div class="flex align-items-center justify-content-center">
       <p class="proxima-16 gray-700">Didn't receive the email?</p>
       <p-button
-        [disabled]="isVerifyEmailSend"
+        [disabled]="!!isVerifyEmailSend || isResendLoading"
+        [loading]="isResendLoading"
         label="Click to resend"
         [link]="true"
         [style]="{ color: '#3b82f5' }"

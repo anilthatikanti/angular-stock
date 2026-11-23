@@ -47,6 +47,7 @@ export class ForgotPasswordComponent {
     return this.forgotPasswordForm.get('email');
   }
   async forgotPassword() {
+    if (this.isResetPasswordButtonLoading) return; // ignore repeat clicks
     try {
       this.isEmailNotRegistered = false;
       if (this.forgotPasswordForm.valid) {

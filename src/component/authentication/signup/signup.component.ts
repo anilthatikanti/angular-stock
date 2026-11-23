@@ -81,6 +81,7 @@ export class SignupComponent implements OnInit {
   }
 
   async signupSubmit() {
+    if (this.isSignupButtonLoading) return; // ignore repeat clicks
     try {
       if (this.signupForm.valid) {
         this.isSignupButtonLoading = true;

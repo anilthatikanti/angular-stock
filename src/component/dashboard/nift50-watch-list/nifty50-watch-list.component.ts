@@ -140,7 +140,7 @@ export class Nifty50WatchListComponent implements OnInit, OnDestroy {
     this.selectingStockEvent.emit(stock);
   }
 
-  async deleteWatchListItem(watchListItem: IWatchList, stockItem: IStock) {
+  private async doDeleteWatchListItem(watchListItem: IWatchList, stockItem: IStock) {
     try {
       const res = await this.stockService.deleteWatchListItem(
         watchListItem._id,
@@ -180,7 +180,7 @@ export class Nifty50WatchListComponent implements OnInit, OnDestroy {
   }
 
   // "+" menu: works for Nifty 50 stocks and for any stock found by the search.
-  async updateWatchList(
+  private async doUpdateWatchList(
     op: any,
     event: any,
     stock: IStockData,
@@ -235,11 +235,49 @@ export class Nifty50WatchListComponent implements OnInit, OnDestroy {
     op.toggle(event);
   }
 
+  // One watchlist request at a time: repeat clicks are ignored while one is running,
+  // and the template shows a spinner on the button/icon for `busyAction`.
+  busyAction: string | null = null;
+
+  private async runOnce(key: string, action: () => Promise<void>) {
+    if (this.busyAction) return;
+    this.busyAction = key;
+    try {
+      await action();
+    } finally {
+      this.busyAction = null;
+    }
+  }
+
+  deleteWatchListItem(watchListItem: IWatchList, stockItem: IStock) {
+    return this.runOnce(`del:${watchListItem._id}:${stockItem.symbol}`, () =>
+      this.doDeleteWatchListItem(watchListItem, stockItem)
+    );
+  }
+
+  updateWatchList(op: any, event: any, stock: IStockData, watchListId: string) {
+    return this.runOnce(`add:${watchListId}:${stock.symbol}`, () =>
+      this.doUpdateWatchList(op, event, stock, watchListId)
+    );
+  }
+
+  updatedWatchListName(watchListNewName: string) {
+    return this.runOnce('rename', () => this.doUpdatedWatchListName(watchListNewName));
+  }
+
+  createWatchList() {
+    return this.runOnce('create', () => this.doCreateWatchList());
+  }
+
+  deleteWatchList() {
+    return this.runOnce('deleteList', () => this.doDeleteWatchList());
+  }
+
   getWatchListStocksCount() {
     return this.watchListData[this.activeTabViewIndex]?.stocks?.length ?? 0;
   }
 
-  async updatedWatchListName(watchListNewName: string) {
+  private async doUpdatedWatchListName(watchListNewName: string) {
     if (!this.editWatchList || this.editWatchList.watchListName === '') return;
     if (this.editWatchList.watchListName === watchListNewName) {
       this.editWatchList = undefined;
@@ -276,7 +314,7 @@ export class Nifty50WatchListComponent implements OnInit, OnDestroy {
     });
   }
 
-  async createWatchList() {
+  private async doCreateWatchList() {
     if (this.watchListData.length < 6) {
       let index = this.watchListData.findIndex(
         (watchList) => watchList.watchListName === this.createWatchListName
@@ -324,7 +362,7 @@ export class Nifty50WatchListComponent implements OnInit, OnDestroy {
     this.createWatchListDialogVisible = false;
   }
 
-  async deleteWatchList() {
+  private async doDeleteWatchList() {
     if (!this.editWatchList) return;
     let res;
     try {

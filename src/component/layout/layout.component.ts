@@ -157,9 +157,13 @@ export class LayoutComponent implements OnInit {
     );
   }
 
+  isPasswordSaving: boolean = false;
+
   async updatePassword() {
+    if (this.isPasswordSaving) return; // ignore repeat clicks
     try {
       if (this.changePasswordForm.valid) {
+        this.isPasswordSaving = true;
         if (this.userHasPassword) {
           await this.changePasswordFn();
         } else {
@@ -176,6 +180,8 @@ export class LayoutComponent implements OnInit {
     } catch (error: any) {
       console.error('updatePassword [ERR]: ', error);
       firebaseErrorMessages(error.code, this.toast.messageService!);
+    } finally {
+      this.isPasswordSaving = false;
     }
   }
 
