@@ -170,6 +170,12 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     return { height, width };
   }
 
+  // Chart text size (price scale on the right + time axis). The price scale's width
+  // follows its label size, so smaller text on phones also makes that column narrower.
+  private chartFontSize(): number {
+    return window.innerWidth < 768 ? 9 : 12;
+  }
+
   isDown(symbol: string): boolean {
     return (this.liveDataMap[symbol]?.change ?? 0) < 0;
   }
@@ -245,6 +251,7 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           layout: {
             textColor: 'black',
             background: { color: 'white' },
+            fontSize: this.chartFontSize(),
           },
           grid: {
             vertLines: { visible: false },
@@ -311,7 +318,10 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           const rect = container.getBoundingClientRect();
           const width = Math.floor(rect.width);
           const height = Math.floor(rect.height);
-          if (width > 0 && height > 0 && this.chart) this.chart.applyOptions({ width, height });
+          if (width > 0 && height > 0 && this.chart) {
+            // Also switches the text size when crossing the phone breakpoint (rotation).
+            this.chart.applyOptions({ width, height, layout: { fontSize: this.chartFontSize() } });
+          }
         });
         this.resizeObserver.observe(container);
         this.ChartAreaSeries = this.chart.addAreaSeries({
