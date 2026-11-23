@@ -20,9 +20,9 @@
     class="chart-card w-full"
   >
     <ng-template pTemplate="header">
-      <div class="h-full">
+      <div>
         <div
-          class="p-2 md:p-3 w-full h-full flex flex-wrap gap-2 justify-content-between align-items-center"
+          class="p-2 md:p-3 w-full flex flex-wrap gap-2 justify-content-between align-items-center"
           [style]="{ 'background-color': '#E6EEF5' }"
         >
           <h5 class="text-base md:text-lg font-medium">
@@ -51,7 +51,7 @@
           </div>
         </div>
         <div
-          class="chart-stats h-full w-full p-2 md:p-3 flex flex-wrap gap-2 justify-content-between"
+          class="chart-stats w-full p-2 md:p-3 flex flex-wrap gap-2 justify-content-between"
           *ngIf="selectedStock?.current_price"
         >
           <div class="flex flex-column justify-content-center">
@@ -77,26 +77,26 @@
           @if(selectedChartStatisticData){
 
           <div class="ohlc flex gap-3 md:gap-4">
-            <div class="h-full w-full">
+            <div class="w-full">
               <p class="font-sm" [style]="{ color: '#a4acba' }">Open</p>
               <p class="font-semibold">
                 {{ selectedChartStatisticData.Open.toFixed(2) }}
                 <!-- {{selectedChartStatisticData|json}} -->
               </p>
             </div>
-            <div class="h-full w-full">
+            <div class="w-full">
               <p class="font-sm" [style]="{ color: '#a4acba' }">Close</p>
               <p class="font-semibold">
                 {{ selectedChartStatisticData.Close.toFixed(2) }}
               </p>
             </div>
-            <div class="h-full w-full">
+            <div class="w-full">
               <p class="font-sm" [style]="{ color: '#a4acba' }">Low</p>
               <p class="font-semibold">
                 {{ selectedChartStatisticData.Low.toFixed(2) }}
               </p>
             </div>
-            <div class="h-full w-full">
+            <div class="w-full">
               <p class="font-sm" [style]="{ color: '#a4acba' }">High</p>
               <p class="font-semibold">
                 {{ selectedChartStatisticData.High.toFixed(2) }}
