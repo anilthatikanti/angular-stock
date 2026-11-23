@@ -110,6 +110,7 @@ export class DashboardComponent implements OnInit {
 
   // Picking a stock in the watchlist panel shows its chart (on phones the panel closes).
   onSelectStock(stock: IStockData) {
+    if (!stock?.symbol) return; // never replace the chart's stock with nothing
     this.selectedStock = stock;
     this.mobileNav.closeWatchlist();
   }
@@ -130,8 +131,10 @@ export class DashboardComponent implements OnInit {
 
       // Load Nifty 50 data first
       await this.stockService.loadNifty50Tokens();
-      this.nifty50 = this.stockService.nifty50Data;
-      this.selectedStock = this.nifty50[0];
+      this.nifty50 = this.stockService.nifty50Data ?? [];
+      // If the Nifty 50 list failed to load (e.g. Yahoo refusing), keep the default stock
+      // instead of `undefined`, which crashed the chart header on every refresh.
+      if (this.nifty50[0]) this.selectedStock = this.nifty50[0];
       await this.initializeWebSocket();
     } catch (error) {
       console.error('Error initializing dashboard:', error);
