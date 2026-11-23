@@ -170,10 +170,33 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
     return { height, width };
   }
 
-  // Chart text size (price scale on the right + time axis). The price scale's width
-  // follows its label size, so smaller text on phones also makes that column narrower.
+  private isPhone(): boolean {
+    return window.innerWidth < 768;
+  }
+
+  // Chart text size (price scale on the right + time axis).
   private chartFontSize(): number {
-    return window.innerWidth < 768 ? 9 : 12;
+    return this.isPhone() ? 9 : 12;
+  }
+
+  // The right price column is as wide as its widest label (the library has no max width).
+  // On phones the labels are compact so the column fits its content at ~36-38px:
+  // 2850 (>= 1000), 950.5 (>= 100), 12.35 (< 100). Desktop keeps 2 decimals.
+  private priceFormatter(): (price: number) => string {
+    if (!this.isPhone()) return (p: number) => p.toFixed(2);
+    return (p: number) => {
+      const abs = Math.abs(p);
+      return p.toFixed(abs >= 1000 ? 0 : abs >= 100 ? 1 : 2);
+    };
+  }
+
+  // Options that change between phone and desktop (applied at start and on resize).
+  private responsiveChartOptions() {
+    return {
+      layout: { fontSize: this.chartFontSize() },
+      localization: { priceFormatter: this.priceFormatter() },
+      rightPriceScale: { minimumWidth: this.isPhone() ? 36 : 0 },
+    };
   }
 
   isDown(symbol: string): boolean {
@@ -260,6 +283,7 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           // Show times in the viewer's local time zone (the library defaults to UTC,
           // which put NSE's 09:15-15:30 IST session at 03:45-10:00).
           localization: {
+            priceFormatter: this.priceFormatter(),
             timeFormatter: (time: number) =>
               new Date(time * 1000).toLocaleString(undefined, {
                 day: '2-digit',
@@ -296,6 +320,7 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           },
           rightPriceScale: {
             borderVisible: false,
+            minimumWidth: this.isPhone() ? 36 : 0,
           },
           handleScroll: {
             mouseWheel: true,
@@ -320,7 +345,7 @@ export class TvChartComponent implements AfterViewInit, OnDestroy, OnChanges {
           const height = Math.floor(rect.height);
           if (width > 0 && height > 0 && this.chart) {
             // Also switches the text size when crossing the phone breakpoint (rotation).
-            this.chart.applyOptions({ width, height, layout: { fontSize: this.chartFontSize() } });
+            this.chart.applyOptions({ width, height, ...this.responsiveChartOptions() });
           }
         });
         this.resizeObserver.observe(container);
