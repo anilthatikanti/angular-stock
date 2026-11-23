@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="STOCX">
+  <rect width="64" height="64" rx="15" fill="#0F172A"/>
+  <path d="M44 16 H26 Q16 16 16 25 Q16 32 25 32 H39 Q48 32 48 40 Q48 48 38 48 H18" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44" cy="16" r="5" fill="#22C55E"/>
+</svg>
